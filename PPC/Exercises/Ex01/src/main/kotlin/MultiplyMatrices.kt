@@ -9,7 +9,6 @@
 
 object MultiplyMatrices {
 
-
     /**
      * Multiplies two matrices sequentially.
      * @param matrix1 The first matrix (MxN).
