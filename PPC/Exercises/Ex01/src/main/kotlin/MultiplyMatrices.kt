@@ -2,6 +2,7 @@
  *  Multiplying matrices
  *  Write a program that receives two matrices of compatible sizes ([MxN] and [NxO])
  *  and returns a new matrix resulting from the multiplication of the other two.
+ *
  *      - Write a sequential version of the program.
  *      - Write a parallel version of the program using a fixed number of threads
  *      - Find the ideal chunk size for your machine
@@ -11,6 +12,7 @@ object MultiplyMatrices {
 
     /**
      * Multiplies two matrices sequentially.
+     *
      * @param matrix1 The first matrix (MxN).
      * @param matrix2 The second matrix (NxO).
      * @return The resulting matrix (MxO) after multiplication.
@@ -23,9 +25,7 @@ object MultiplyMatrices {
         val rowSize2 = matrix2.size
         val colSize2 = matrix2[0].size
 
-        if (colSize1 != rowSize2) {
-            throw IllegalArgumentException("Incompatible matrix sizes")
-        }
+        require(colSize1 == rowSize2) {"Incompatible matrix sizes"}
 
         val result = List(rowSize1) { MutableList(colSize2) { 0 } }
 
@@ -41,61 +41,38 @@ object MultiplyMatrices {
     }
 
     /**
-     * Multiplies two matrices in parallel using multiple threads.
-     * Each row of the resulting matrix is computed in a separate thread.
+     * Multiplies two matrices in parallel using a fixed number of threads (4).
+     *
      * @param matrix1 The first matrix (MxN).
      * @param matrix2 The second matrix (NxO).
      * @return The resulting matrix (MxO) after multiplication.
      * @throws IllegalArgumentException if the matrices have incompatible sizes.
      */
     fun parallel(matrix1: List<List<Int>>, matrix2: List<List<Int>>): List<List<Int>> {
+        validateMatrices(matrix1, matrix2)
+
         val rowSize1 = matrix1.size
-        val colSize1 = matrix1[0].size
+        val numberOfThreads = 4
+        val chunkSize = (rowSize1 + numberOfThreads - 1) / numberOfThreads
 
-        val rowSize2 = matrix2.size
-        val colSize2 = matrix2[0].size
-
-        if (colSize1 != rowSize2) {
-            throw IllegalArgumentException("Incompatible matrix sizes")
-        }
-
-        val result = List(rowSize1) { MutableList(colSize2) { 0 } }
-        val threads = mutableListOf<Thread>()
-
-        matrix1.forEachIndexed { i, row ->
-            val thread = Thread {
-                for (j in 0 until colSize2) {
-                    row.forEachIndexed { k, value ->
-                        result[i][j] += value * matrix2[k][j]
-                    }
-                }
-            }
-            threads.add(thread)
-            thread.start()
-        }
-
-        threads.forEach { it.join() }
-        return result
+        return parallel(matrix1, matrix2, chunkSize)
     }
 
     /**
-     * Multiplies two matrices in parallel using multiple threads with a specified chunk size.
-     * Each thread computes a chunk of rows of the resulting matrix.
+     * Multiplies two matrices in parallel using a specified chunk size.
+     *
      * @param matrix1 The first matrix (MxN).
      * @param matrix2 The second matrix (NxO).
-     * @param chunkSize The number of rows each thread will compute.
+     * @param chunkSize The number of rows each thread will process.
      * @return The resulting matrix (MxO) after multiplication.
      * @throws IllegalArgumentException if the matrices have incompatible sizes.
      */
-    fun parallelWithChunkSize(matrix1: List<List<Int>>, matrix2: List<List<Int>>, chunkSize: Int): List<List<Int>> {
+    fun parallel(matrix1: List<List<Int>>, matrix2: List<List<Int>>, chunkSize: Int): List<List<Int>> {
+        validateMatrices(matrix1, matrix2)
+
         val rowSize1 = matrix1.size
         val colSize1 = matrix1[0].size
-        val rowSize2 = matrix2.size
         val colSize2 = matrix2[0].size
-
-        if (colSize1 != rowSize2) {
-            throw IllegalArgumentException("Incompatible matrix sizes")
-        }
 
         val result = List(rowSize1) { MutableList(colSize2) { 0 } }
         val threads = mutableListOf<Thread>()
@@ -123,7 +100,7 @@ object MultiplyMatrices {
 
     /**
      * Determines the optimal chunk size for parallel matrix multiplication based on the machine's capabilities.
-     * It tests various chunk sizes and measures the execution time to find the best one.
+     *
      * @param matrix1 The first matrix (MxN).
      * @param matrix2 The second matrix (NxO).
      * @return The optimal chunk size for parallel processing.
@@ -132,19 +109,19 @@ object MultiplyMatrices {
         val numberOfCores = Runtime.getRuntime().availableProcessors()
         val matrix1Rows = matrix1.size
 
-        val chunckSizes = listOf(1, 2, 4, 8, 16, matrix1Rows / numberOfCores, matrix1Rows / (numberOfCores * 2))
+        val chunkSizes = listOf(1, 2, 4, 8, 16, matrix1Rows / numberOfCores, matrix1Rows / (numberOfCores * 2))
             .filter { it in 1..matrix1Rows }
             .distinct()
 
         var bestChunkSize = 1
-        var bestTime = Long.MAX_VALUE
+        val bestTime = Long.MAX_VALUE
 
-        for (chunkSize in chunckSizes) {
+        for (chunkSize in chunkSizes) {
             val times = mutableListOf<Long>()
 
             repeat(5) {
                 val startTime = System.nanoTime()
-                parallelWithChunkSize(matrix1, matrix2, chunkSize)
+                parallel(matrix1, matrix2, chunkSize)
                 val endTime = System.nanoTime()
                 times.add(endTime - startTime)
             }
@@ -157,6 +134,18 @@ object MultiplyMatrices {
         }
 
         return bestChunkSize
+    }
+
+    /** Validates that the matrices are non-empty and compatible for multiplication.
+     * @param matrix1 The first matrix.
+     * @param matrix2 The second matrix.
+     * @throws IllegalArgumentException if the matrices are empty or incompatible.
+     * */
+    private fun validateMatrices(matrix1: List<List<Int>>, matrix2: List<List<Int>>) {
+        val colSize1 = matrix1[0].size
+        val rowSize2 = matrix2.size
+        require(matrix1.isNotEmpty() && matrix2.isNotEmpty()) {"Matrices must not be empty"}
+        require(colSize1 == rowSize2) {"Incompatible matrix sizes"}
     }
 }
 

@@ -186,7 +186,7 @@ class MultiplyMatricesTests {
                 listOf(139, 154)
             )
 
-            val result = MultiplyMatrices.parallelWithChunkSize(matrix1, matrix2, 1)
+            val result = MultiplyMatrices.parallel(matrix1, matrix2, 1)
             assertEquals(expected, result)
         }
 
@@ -201,7 +201,7 @@ class MultiplyMatricesTests {
                 listOf(0, 1)
             )
 
-            val result = MultiplyMatrices.parallelWithChunkSize(matrix, identity, 2)
+            val result = MultiplyMatrices.parallel(matrix, identity, 2)
             assertEquals(matrix, result)
         }
 
@@ -217,7 +217,7 @@ class MultiplyMatricesTests {
             )
 
             assertFailsWith<IllegalArgumentException> {
-                MultiplyMatrices.parallelWithChunkSize(matrix1, matrix2, 1)
+                MultiplyMatrices.parallel(matrix1, matrix2, 1)
             }
         }
 
@@ -238,7 +238,7 @@ class MultiplyMatricesTests {
             )
 
             val sequentialResult = MultiplyMatrices.sequential(matrix1, matrix2)
-            val chunkResult = MultiplyMatrices.parallelWithChunkSize(matrix1, matrix2, 2)
+            val chunkResult = MultiplyMatrices.parallel(matrix1, matrix2, 2)
 
             assertEquals(sequentialResult, chunkResult)
         }
@@ -268,7 +268,7 @@ class MultiplyMatricesTests {
             val chunkSizes = listOf(1, 2, 4, 8)
 
             for (chunkSize in chunkSizes) {
-                val result = MultiplyMatrices.parallelWithChunkSize(matrix1, matrix2, chunkSize)
+                val result = MultiplyMatrices.parallel(matrix1, matrix2, chunkSize)
                 assertEquals(expected, result, "Failed for chunk size $chunkSize")
             }
         }
@@ -291,7 +291,7 @@ class MultiplyMatricesTests {
             )
 
             // Chunk size maior que o número de linhas
-            val result = MultiplyMatrices.parallelWithChunkSize(matrix1, matrix2, 10)
+            val result = MultiplyMatrices.parallel(matrix1, matrix2, 10)
             assertEquals(expected, result)
         }
 
@@ -301,7 +301,7 @@ class MultiplyMatricesTests {
             val matrix2 = listOf(listOf(3))
             val expected = listOf(listOf(15))
 
-            val result = MultiplyMatrices.parallelWithChunkSize(matrix1, matrix2, 1)
+            val result = MultiplyMatrices.parallel(matrix1, matrix2, 1)
             assertEquals(expected, result)
         }
 
@@ -322,7 +322,7 @@ class MultiplyMatricesTests {
             val matrix2 = List(200) { List(200) { it } }
 
             val optimalChunkSize = MultiplyMatrices.getOptimalChunkSize(matrix1, matrix2)
-            val result = MultiplyMatrices.parallelWithChunkSize(matrix1, matrix2, optimalChunkSize)
+            val result = MultiplyMatrices.parallel(matrix1, matrix2, optimalChunkSize)
             val expected = MultiplyMatrices.sequential(matrix1, matrix2)
 
             assertEquals(expected, result)
