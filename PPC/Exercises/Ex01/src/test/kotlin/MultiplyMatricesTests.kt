@@ -6,7 +6,7 @@ import kotlin.test.assertFailsWith
 class MultiplyMatricesTests {
 
     @Nested
-    inner class SequentialMultiplicationTests {
+    inner class SequentialTests {
         @Test
         fun testSimpleMultiplication() {
             val matrix1 = listOf(
@@ -62,7 +62,7 @@ class MultiplyMatricesTests {
     }
 
     @Nested
-    inner class ParallelMultiplicationTests {
+    inner class ParallelFixedThreadsTests {
         @Test
         fun testParallelSimpleMultiplication() {
             val matrix1 = listOf(
@@ -166,7 +166,7 @@ class MultiplyMatricesTests {
     }
 
     @Nested
-    inner class ParallelMultiplicationWithChunksTests {
+    inner class ParallelWithChunkSizeTests {
 
         @Test
         fun testParallelWithChunkSizeSimpleMultiplication() {

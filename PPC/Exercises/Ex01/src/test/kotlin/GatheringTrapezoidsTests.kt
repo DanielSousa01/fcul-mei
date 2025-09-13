@@ -6,7 +6,7 @@ import kotlin.test.assertFailsWith
 class GatheringTrapezoidsTests {
 
     @Nested
-    inner class SequentialGatheringTrapezoidsTestsTests {
+    inner class SequentialTests {
         @Test
         fun testLinearFunction() {
             val f: (Double) -> Double = { x -> x }
@@ -87,7 +87,7 @@ class GatheringTrapezoidsTests {
     }
 
     @Nested
-    inner class ParallelGatheringTrapezoidsTests {
+    inner class ParallelFixedThreadsTests {
         @Test
         fun testLinearFunction() {
             val f: (Double) -> Double = { x -> x }
