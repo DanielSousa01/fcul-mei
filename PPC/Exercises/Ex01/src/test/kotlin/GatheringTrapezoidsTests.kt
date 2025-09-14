@@ -299,4 +299,5 @@ class GatheringTrapezoidsTests {
             assertEquals(50.0, result, 1e-5)
         }
     }
+
 }

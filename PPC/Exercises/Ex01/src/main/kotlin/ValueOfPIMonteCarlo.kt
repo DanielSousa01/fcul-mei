@@ -1,3 +1,6 @@
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+
 /**
  * Throwing darts in MonteCarlo to find pi.
  * Write a program that estimates the value of PI using a Monte Carlo simulation.
@@ -45,38 +48,18 @@ object ValueOfPIMonteCarlo {
      * @throws IllegalArgumentException if totalDarts is not positive.
      */
     fun parallel(totalDarts: Int): Double {
-        var numThreads = 4
-
         require(totalDarts > 0) { "Total darts must be positive" }
 
+        var numThreads = 4
         if (totalDarts < numThreads) numThreads = totalDarts
 
-        val chunkSize = totalDarts / numThreads
+        val threadPool = Executors.newFixedThreadPool(numThreads)
 
-        val threads = mutableListOf<Thread>()
+        val chunkSize = totalDarts / numThreads
         val insideCircleResults = MutableList(numThreads) { 0 }
 
-        repeat(numThreads) { threadIndex ->
-            val start = threadIndex * chunkSize
-            val end = if (threadIndex == numThreads - 1) totalDarts else start + chunkSize
+        executeThreadPool(threadPool, totalDarts, numThreads, chunkSize, insideCircleResults) 
 
-            val thread = Thread {
-                var insideCircle = 0
-                for (i in start until end) {
-                    val x = Math.random() * 2 - 1
-                    val y = Math.random() * 2 - 1
-                    if (x * x + y * y <= 1) {
-                        insideCircle++
-                    }
-                }
-                insideCircleResults[threadIndex] = insideCircle
-            }
-
-            threads.add(thread)
-            thread.start()
-        }
-
-        threads.forEach { it.join() }
         val totalInsideCircle = insideCircleResults.sum()
 
         return 4.0 * totalInsideCircle / totalDarts
@@ -95,30 +78,12 @@ object ValueOfPIMonteCarlo {
         require(chunkSize > 0) { "Chunk size must be positive" }
 
         val numThreads = (totalDarts + chunkSize - 1) / chunkSize
-        val threads = mutableListOf<Thread>()
+        val threadPool = Executors.newFixedThreadPool(numThreads)
+
         val insideCircleResults = MutableList(numThreads) { 0 }
 
-        for (threadIndex in 0 until numThreads) {
-            val start = threadIndex * chunkSize
-            val end = minOf(start + chunkSize, totalDarts)
+        executeThreadPool(threadPool, totalDarts, numThreads, chunkSize, insideCircleResults)
 
-            val thread = Thread {
-                var insideCircle = 0
-                for (i in start until end) {
-                    val x = Math.random() * 2 - 1
-                    val y = Math.random() * 2 - 1
-
-                    if (x * x + y * y <= 1) insideCircle++
-                }
-
-                insideCircleResults[threadIndex] = insideCircle
-            }
-
-            threads.add(thread)
-            thread.start()
-        }
-
-        threads.forEach { it.join() }
         val totalInsideCircle = insideCircleResults.sum()
 
         return 4.0 * totalInsideCircle / totalDarts
@@ -152,5 +117,33 @@ object ValueOfPIMonteCarlo {
         }
 
         return bestChunkSize
+    }
+
+    private fun executeThreadPool(
+        threadPool: ExecutorService,
+        totalDarts: Int,
+        numThreads: Int,
+        chunkSize: Int,
+        insideCircleResults: MutableList<Int>) {
+
+        for (threadIndex in 0 until numThreads) {
+            val start = threadIndex * chunkSize
+            val end = minOf(start + chunkSize, totalDarts)
+
+            threadPool.submit {
+                var insideCircle = 0
+                for (i in start until end) {
+                    val x = Math.random() * 2 - 1
+                    val y = Math.random() * 2 - 1
+
+                    if (x * x + y * y <= 1) insideCircle++
+                }
+
+                insideCircleResults[threadIndex] = insideCircle
+            }
+        }
+
+        threadPool.shutdown()
+        threadPool.awaitTermination(Long.MAX_VALUE, java.util.concurrent.TimeUnit.NANOSECONDS)
     }
 }

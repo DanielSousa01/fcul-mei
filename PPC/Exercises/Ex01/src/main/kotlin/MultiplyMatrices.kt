@@ -1,3 +1,7 @@
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+
 /**
  *  Multiplying matrices
  *  Write a program that receives two matrices of compatible sizes ([MxN] and [NxO])
@@ -29,10 +33,10 @@ object MultiplyMatrices {
 
         val result = List(rowSize1) { MutableList(colSize2) { 0 } }
 
-        matrix1.forEachIndexed { i, row ->
+        for (i in 0 until rowSize1) {
             for (j in 0 until colSize2) {
-                row.forEachIndexed { k, value ->
-                    result[i][j] += value * matrix2[k][j]
+                for (k in 0 until colSize1) {
+                    result[i][j] += matrix1[i][k] * matrix2[k][j]
                 }
             }
         }
@@ -51,11 +55,12 @@ object MultiplyMatrices {
     fun parallel(matrix1: List<List<Int>>, matrix2: List<List<Int>>): List<List<Int>> {
         validateMatrices(matrix1, matrix2)
 
-        val rowSize1 = matrix1.size
-        val numberOfThreads = 4
-        val chunkSize = (rowSize1 + numberOfThreads - 1) / numberOfThreads
+        val poolSize = 4
+        val threadPool = Executors.newFixedThreadPool(poolSize)
 
-        return parallel(matrix1, matrix2, chunkSize)
+        val chunkSize = (matrix1.size + poolSize - 1) / poolSize
+
+        return runThreadPool(threadPool, matrix1, matrix2, chunkSize)
     }
 
     /**
@@ -70,32 +75,10 @@ object MultiplyMatrices {
     fun parallel(matrix1: List<List<Int>>, matrix2: List<List<Int>>, chunkSize: Int): List<List<Int>> {
         validateMatrices(matrix1, matrix2)
 
-        val rowSize1 = matrix1.size
-        val colSize1 = matrix1[0].size
-        val colSize2 = matrix2[0].size
+        val poolSize = (matrix1.size + chunkSize - 1) / chunkSize
+        val threadPool = Executors.newFixedThreadPool(poolSize)
 
-        val result = List(rowSize1) { MutableList(colSize2) { 0 } }
-        val threads = mutableListOf<Thread>()
-
-        for (startRow in 0 until rowSize1 step chunkSize) {
-            val endRow = (startRow + chunkSize).coerceAtMost(rowSize1)
-
-            val thread = Thread {
-                for (i in startRow until endRow) {
-                    for (j in 0 until colSize2) {
-                        for (k in 0 until colSize1) {
-                            result[i][j] += matrix1[i][k] * matrix2[k][j]
-                        }
-                    }
-                }
-            }
-
-            threads.add(thread)
-            thread.start()
-        }
-
-        threads.forEach { it.join() }
-        return result
+        return runThreadPool(threadPool, matrix1, matrix2, chunkSize)
     }
 
     /**
@@ -146,6 +129,46 @@ object MultiplyMatrices {
         val rowSize2 = matrix2.size
         require(matrix1.isNotEmpty() && matrix2.isNotEmpty()) {"Matrices must not be empty"}
         require(colSize1 == rowSize2) {"Incompatible matrix sizes"}
+    }
+
+    /** Runs the matrix multiplication using the provided thread pool and chunk size.
+     *
+     * @param threadPool The ExecutorService to manage threads.
+     * @param matrix1 The first matrix.
+     * @param matrix2 The second matrix.
+     * @param chunkSize The number of rows each thread will process.
+     * @return The resulting matrix after multiplication.
+     * */
+    private fun runThreadPool(
+        threadPool: ExecutorService,
+        matrix1: List<List<Int>>,
+        matrix2: List<List<Int>>,
+        chunkSize: Int,
+    ): List<List<Int>> {
+        val rowSize1 = matrix1.size
+        val colSize1 = matrix1[0].size
+        val colSize2 = matrix2[0].size
+
+        val result = List(rowSize1) { MutableList(colSize2) { 0 } }
+
+        for (startRow in 0 until rowSize1 step chunkSize) {
+            val endRow = (startRow + chunkSize).coerceAtMost(rowSize1)
+
+            threadPool.submit {
+                for (i in startRow until endRow) {
+                    for (j in 0 until colSize2) {
+                        for (k in 0 until colSize1) {
+                            result[i][j] += matrix1[i][k] * matrix2[k][j]
+                        }
+                    }
+                }
+            }
+        }
+
+        threadPool.shutdown()
+        threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)
+
+        return result
     }
 }
 

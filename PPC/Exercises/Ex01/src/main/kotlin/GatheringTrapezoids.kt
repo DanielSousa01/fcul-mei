@@ -1,3 +1,7 @@
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
+
 /**
  * Gathering trapezoids together
  * Write a program that estimates the integral of a given function f, using the trapezoid rule.
@@ -76,10 +80,12 @@ object GatheringTrapezoids {
         validateParameters(lowerBound, upperBound, resolution)
 
         val numberOfThreads = 4
+        val threadPool = Executors.newFixedThreadPool(numberOfThreads)
 
         var trapezoidNum = 1
         var trapezoidWidth = (upperBound - lowerBound) / trapezoidNum
         var prev = 0.5 * (f(lowerBound) + f(upperBound)) * trapezoidWidth
+
 
         while (true) {
             trapezoidNum *= 2
@@ -88,39 +94,45 @@ object GatheringTrapezoids {
             val oddPoints = (1 until trapezoidNum step 2).toList()
 
             val chunkSize = oddPoints.size / numberOfThreads + 1
-            val threads = mutableListOf<Thread>()
             val results = DoubleArray(numberOfThreads) { 0.0 }
+            val futures = mutableListOf<Future<*>>()
 
             for (threadIndex in 0 until numberOfThreads) {
                 val start = threadIndex * chunkSize
                 val end = minOf((threadIndex + 1) * chunkSize, oddPoints.size)
 
                 if (start < oddPoints.size) {
-                    val thread = Thread {
+                    val future = threadPool.submit {
                         var sum = 0.0
                         for (i in start until end) {
                             val oddPoint = oddPoints[i]
                             val x = lowerBound + oddPoint * trapezoidWidth
                             sum += f(x)
                         }
+
                         results[threadIndex] = sum
                     }
-                    threads.add(thread)
-                    thread.start()
+                    futures.add(future)
                 }
             }
 
-            threads.forEach { it.join() }
+            futures.forEach { it.get() }
+
             val totalSum = results.sum()
             val current = 0.5 * prev + totalSum * trapezoidWidth
 
-            if (kotlin.math.abs(current - prev) < resolution) return current
+            if (kotlin.math.abs(current - prev) < resolution) {
+                threadPool.shutdown()
+                threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)
+                return current
+            }
 
             prev = current
         }
+
     }
 
-    /**
+    /** TODO: refactor to avoid code duplication and correct tests error
      * Estimates the integral of a given function f using the trapezoid rule in parallel with a specified chunk size.
      *
      * @param f The function to integrate.
@@ -138,7 +150,10 @@ object GatheringTrapezoids {
         resolution: Double,
         chunkSize: Int
     ): Double {
-        validateParameters(lowerBound, upperBound, resolution)
+        validateParameters(lowerBound, upperBound, resolution, chunkSize)
+
+        val maxNumThreads = Runtime.getRuntime().availableProcessors()
+        val threadPool = Executors.newFixedThreadPool(maxNumThreads)
 
         var trapezoidNum = 1
         var trapezoidWidth = (upperBound - lowerBound) / trapezoidNum
@@ -150,8 +165,12 @@ object GatheringTrapezoids {
 
             val oddPoints = (1 until trapezoidNum step 2).toList()
 
-            val threads = mutableListOf<Thread>()
-            val numberOfThreads = (oddPoints.size + chunkSize - 1) / chunkSize
+            val numberOfThreads = minOf(
+                maxNumThreads,
+                (oddPoints.size + chunkSize - 1) / chunkSize
+            )
+
+            val futures = mutableListOf<Future<*>>()
             val results = DoubleArray(numberOfThreads) { 0.0 }
 
             for (threadIndex in 0 until numberOfThreads) {
@@ -159,7 +178,7 @@ object GatheringTrapezoids {
                 val end = minOf((threadIndex + 1) * chunkSize, oddPoints.size)
 
                 if (start < oddPoints.size) {
-                    val thread = Thread {
+                    val future = threadPool.submit {
                         var sum = 0.0
                         for (i in start until end) {
                             val oddPoint = oddPoints[i]
@@ -168,16 +187,21 @@ object GatheringTrapezoids {
                         }
                         results[threadIndex] = sum
                     }
-                    threads.add(thread)
-                    thread.start()
+
+                    futures.add(future)
                 }
             }
 
-            threads.forEach { it.join() }
+            futures.forEach { it.get() }
+
             val totalSum = results.sum()
             val current = 0.5 * prev + totalSum * trapezoidWidth
 
-            if (kotlin.math.abs(current - prev) < resolution) return current
+            if (kotlin.math.abs(current - prev) < resolution) {
+                threadPool.shutdown()
+                threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)
+                return current
+            }
 
             prev = current
         }
@@ -229,9 +253,10 @@ object GatheringTrapezoids {
      * @param resolution The desired resolution for the approximation.
      * @throws IllegalArgumentException if lowerBound is not less than upperBound or if resolution is not positive.
      */
-    private fun validateParameters(lowerBound: Double, upperBound: Double, resolution: Double) {
+    private fun validateParameters(lowerBound: Double, upperBound: Double, resolution: Double, chunkSize: Int = 1) {
         require(lowerBound < upperBound) { "Lower bound must be less than upper bound" }
         require(resolution > 0) { "Resolution must be positive" }
+        require(chunkSize > 0) { "Chunk size must be positive"}
     }
 }
 
