@@ -330,6 +330,67 @@ class MultiplyMatricesTests {
 
     }
 
+    @Nested
+    inner class MasterParallelTests {
+
+        @Test
+        fun testSimpleMultiplication() {
+            val matrix1 = listOf(
+                listOf(1, 2, 3),
+                listOf(4, 5, 6)
+            )
+            val matrix2 = listOf(
+                listOf(7, 8),
+                listOf(9, 10),
+                listOf(11, 12)
+            )
+            val expected = listOf(
+                listOf(58, 64),
+                listOf(139, 154)
+            )
+            val result = MultiplyMatrices.masterParallel(matrix1, matrix2)
+            assertEquals(expected, result)
+        }
+
+        @Test
+        fun testIdentityMatrix() {
+            val matrix = listOf(
+                listOf(1, 2),
+                listOf(3, 4)
+            )
+            val identity = listOf(
+                listOf(1, 0),
+                listOf(0, 1)
+            )
+            val result = MultiplyMatrices.masterParallel(matrix, identity)
+            assertEquals(matrix, result)
+        }
+
+        @Test
+        fun testIncompatibleSizes() {
+            val matrix1 = listOf(
+                listOf(1, 2)
+            )
+            val matrix2 = listOf(
+                listOf(1, 2),
+                listOf(3, 4),
+                listOf(5, 6)
+            )
+            assertFailsWith<IllegalArgumentException> {
+                MultiplyMatrices.masterParallel(matrix1, matrix2)
+            }
+        }
+
+        @Test
+        fun testSingleElementMatrix() {
+            val matrix1 = listOf(listOf(5))
+            val matrix2 = listOf(listOf(3))
+            val expected = listOf(listOf(15))
+            val result = MultiplyMatrices.masterParallel(matrix1, matrix2)
+            assertEquals(expected, result)
+        }
+    }
+
 
 }
 

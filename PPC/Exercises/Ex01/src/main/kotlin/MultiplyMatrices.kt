@@ -1,5 +1,7 @@
+import java.util.concurrent.BlockingQueue
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 
 /**
@@ -79,6 +81,52 @@ object MultiplyMatrices {
         val threadPool = Executors.newFixedThreadPool(poolSize)
 
         return runThreadPool(threadPool, matrix1, matrix2, chunkSize)
+    }
+
+    fun masterParallel(matrix1: List<List<Int>>, matrix2: List<List<Int>>): List<List<Int>> {
+        validateMatrices(matrix1, matrix2)
+
+        val workersSize = Runtime.getRuntime().availableProcessors() - 2
+        val workerThreads = ArrayList<Thread>(workersSize)
+
+        val BlockingQueue = LinkedBlockingQueue<Task>()
+
+        val poisonPill = Task(null, TaskType.POISON_PILL)
+
+        repeat(workersSize) {
+            val worker = Worker(BlockingQueue)
+            val thread = Thread(worker)
+            workerThreads.add(thread)
+            thread.start()
+        }
+
+        val rowSize1 = matrix1.size
+        val colSize1 = matrix1[0].size
+        val colSize2 = matrix2[0].size
+
+        val result = List(rowSize1) { MutableList(colSize2) { 0 } }
+
+        for (i in 0 until rowSize1) {
+            val runnable = Runnable {
+                for (j in 0 until colSize2) {
+                    for (k in 0 until colSize1) {
+                        result[i][j] += matrix1[i][k] * matrix2[k][j]
+                    }
+                }
+            }
+
+            val task = Task(runnable)
+
+            BlockingQueue.put(task)
+        }
+
+        repeat(workersSize) {
+            BlockingQueue.put(poisonPill)
+        }
+
+        workerThreads.forEach { it.join() }
+
+        return result
     }
 
     /**
