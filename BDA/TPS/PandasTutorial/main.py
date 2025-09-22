@@ -60,7 +60,6 @@ def read_data(file_path: str) -> pd.DataFrame:
     return data
 
 
-# Function to print the entire DataFrame
 def print_data(data: pd.DataFrame) -> None:
     """
     Prints the entire DataFrame.
@@ -144,7 +143,7 @@ def sort_by_age(data: pd.DataFrame, limit: int = 5) -> None:
 
     :param data: pandas DataFrame to sort.
     :param limit: Number of rows to return from the sorted DataFrame.
-    :return: Sorted pandas DataFrame.
+    :return: None
     """
 
     sorted_data = data.sort_values(by='age', ascending=True)
@@ -160,6 +159,7 @@ def statistical_summary(data: pd.DataFrame, column_name: str) -> None:
     :param column_name: Column name to analyze.
     :return: None
     """
+
     if column_name not in data.columns:
         print(f"Column '{column_name}' does not exist in the DataFrame.")
         return
