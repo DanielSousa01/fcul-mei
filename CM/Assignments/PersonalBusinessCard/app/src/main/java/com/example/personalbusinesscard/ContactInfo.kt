@@ -1,5 +1,6 @@
 package com.example.personalbusinesscard
 
+import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,8 +32,7 @@ import androidx.core.net.toUri
 import com.example.personalbusinesscard.ui.theme.PersonalBusinessCardTheme
 
 @Composable
-fun ContactInfo(modifier: Modifier) {
-    val context = LocalContext.current
+fun ContactInfo(modifier: Modifier, context: Context = LocalContext.current) {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = modifier.padding(16.dp),
@@ -41,9 +41,9 @@ fun ContactInfo(modifier: Modifier) {
             ContactButton(
                 onClick = {
                     val intent = Intent(
-                    Intent.ACTION_DIAL,
-                    "tel:+351962005244".toUri()
-                )
+                        Intent.ACTION_DIAL,
+                        "tel:+351962005244".toUri()
+                    )
                     context.startActivity(intent)
                 },
                 icon = ContactIcon.VectorIcon(Icons.Default.Phone),
@@ -58,7 +58,7 @@ fun ContactInfo(modifier: Modifier) {
                     intent.setPackage("com.instagram.android")
                     context.startActivity(intent)
                 },
-                icon =  ContactIcon.PainterIcon(painterResource(R.drawable.instagram)),
+                icon = ContactIcon.PainterIcon(painterResource(R.drawable.instagram)),
                 description = "Instagram"
             ),
             ContactButton(
@@ -97,7 +97,7 @@ fun ContactInfo(modifier: Modifier) {
                 description = "GitHub"
             ),
 
-        )
+            )
         ContactButtons(contactButtons = buttons, modifier = modifier)
     }
 }
@@ -115,15 +115,16 @@ fun ContactButtons(contactButtons: List<ContactButton>, modifier: Modifier = Mod
             repeat(if (secondButton != null) 2 else 1) { idx ->
                 val button = if (idx == 0) {
                     firstButton
-                }
-                else {
-                    requireNotNull(secondButton) {"Second button should not be null here"}
+                } else {
+                    requireNotNull(secondButton) { "Second button should not be null here" }
                     secondButton
                 }
 
                 Button(
                     onClick = button.onClick,
-                    modifier = modifier.weight(1f).height(60.dp),
+                    modifier = modifier
+                        .weight(1f)
+                        .height(60.dp),
                     shape = RoundedCornerShape(20.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Black.copy(alpha = 0.25f),
@@ -131,11 +132,12 @@ fun ContactButtons(contactButtons: List<ContactButton>, modifier: Modifier = Mod
                     )
                 ) {
                     if (button.icon is ContactIcon.VectorIcon) {
-                        Icon(button.icon.imageVector,null)
+                        Icon(button.icon.imageVector, null)
                     } else {
                         require(button.icon is ContactIcon.PainterIcon)
-                        {"Icon should be a PainterIcon here"}
-                        Icon(button.icon.painter,null
+                        { "Icon should be a PainterIcon here" }
+                        Icon(
+                            button.icon.painter, null
                         )
                     }
                     Spacer(modifier.width(8.dp))
