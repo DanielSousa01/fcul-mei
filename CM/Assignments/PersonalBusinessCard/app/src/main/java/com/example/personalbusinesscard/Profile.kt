@@ -25,11 +25,11 @@ import androidx.compose.ui.unit.dp
 import com.example.personalbusinesscard.ui.theme.PersonalBusinessCardTheme
 
 @Composable
-fun Profile(modifier: Modifier) {
+fun Profile(modifier: Modifier, alpha: Float = 0.25f) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(10.dp))
-            .background(Color.Black.copy(alpha = 0.25f))
+            .background(Color.Black.copy(alpha = alpha))
             .size(350.dp, 300.dp),
         contentAlignment = Alignment.Center
     ) {

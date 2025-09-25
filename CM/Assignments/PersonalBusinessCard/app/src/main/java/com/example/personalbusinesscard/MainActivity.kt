@@ -7,7 +7,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
@@ -38,14 +40,14 @@ fun MainContent(modifier: Modifier) {
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .padding(top = 32.dp)
                 .systemBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(50.dp),
         ) {
+            val alpha = 0.40f
             FculIcon(modifier, context)
-            Profile(modifier)
-            ContactInfo(modifier, context)
+            Profile(modifier, alpha)
+            ContactInfo(modifier, context, alpha)
         }
     }
 }

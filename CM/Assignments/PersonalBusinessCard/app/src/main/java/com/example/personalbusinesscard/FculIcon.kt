@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -45,7 +46,8 @@ fun FculIcon(modifier: Modifier, context: Context = LocalContext.current) {
             Image(
                 painter = painterResource(R.drawable.fcul),
                 contentDescription = null,
-                modifier = modifier.size(200.dp)
+                modifier = modifier.size(200.dp),
+                colorFilter = ColorFilter.tint(Color.White)
             )
         }
     }

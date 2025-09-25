@@ -32,7 +32,11 @@ import androidx.core.net.toUri
 import com.example.personalbusinesscard.ui.theme.PersonalBusinessCardTheme
 
 @Composable
-fun ContactInfo(modifier: Modifier, context: Context = LocalContext.current) {
+fun ContactInfo(
+    modifier: Modifier,
+    context: Context = LocalContext.current,
+    alpha: Float = 0.25f
+) {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = modifier.padding(16.dp),
@@ -98,12 +102,16 @@ fun ContactInfo(modifier: Modifier, context: Context = LocalContext.current) {
             ),
 
             )
-        ContactButtons(contactButtons = buttons, modifier = modifier)
+        ContactButtons(contactButtons = buttons, modifier = modifier, alpha = alpha)
     }
 }
 
 @Composable
-fun ContactButtons(contactButtons: List<ContactButton>, modifier: Modifier = Modifier) {
+fun ContactButtons(
+    contactButtons: List<ContactButton>,
+    modifier: Modifier = Modifier,
+    alpha: Float
+) {
     for (buttonIdx in 0 until contactButtons.size step 2) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -127,7 +135,7 @@ fun ContactButtons(contactButtons: List<ContactButton>, modifier: Modifier = Mod
                         .height(60.dp),
                     shape = RoundedCornerShape(20.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Black.copy(alpha = 0.25f),
+                        containerColor = Color.Black.copy(alpha = alpha),
                         contentColor = Color.White
                     )
                 ) {
