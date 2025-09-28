@@ -1,7 +1,7 @@
-import mysql.connector as mysql
-import numpy as np
-import pandas as pd
 import os
+
+import mysql.connector as mysql
+import pandas as pd
 
 
 def get_dataframe_from_csv(file_path):
@@ -295,31 +295,33 @@ if __name__ == '__main__':
     db_connection = connect_to_database()
 
     if db_connection:
-        print("\n--- Creating table ---")
-        create_table(db_connection, dataFrame)
+        try:
+            print("\n--- Creating table ---")
+            create_table(db_connection, dataFrame)
 
-        print("\n--- Inserting rows ---")
-        insert_rows(db_connection, dataFrame, 600)
+            print("\n--- Inserting rows ---")
+            insert_rows(db_connection, dataFrame, 600)
 
-        print("\n--- Printing rows where DiamMax_pc > 10 ---")
-        print_rows(db_connection)
+            print("\n--- Printing rows where DiamMax_pc > 10 ---")
+            print_rows(db_connection)
 
-        print("\n--- Printing RA_ICRS, DE_ICRS, Diam_pc where Plx > 1 ---")
-        print_specific_columns(db_connection)
+            print("\n--- Printing RA_ICRS, DE_ICRS, Diam_pc where Plx > 1 ---")
+            print_specific_columns(db_connection)
 
-        print("\n--- Updating age of a star cluster ---")
-        update_age(db_connection, 'ASCC_10', 7.000)
+            print("\n--- Updating age of a star cluster ---")
+            update_age(db_connection, 'ASCC_10', 7.000)
 
-        print("\n--- Deleting a star cluster ---")
-        delete_row(db_connection, 'ASCC_10')
+            print("\n--- Deleting a star cluster ---")
+            delete_row(db_connection, 'ASCC_10')
 
-        print("\n--- Finding a star cluster ---")
-        find_row(db_connection, 'FSR')
+            print("\n--- Finding a star cluster ---")
+            find_row(db_connection, 'FSR')
 
-        print("\n--- Counting rows where FeH < 0 ---")
-        total_rows = count_rows(db_connection)
-        print(f"Total rows with FeH < 0: {total_rows}")
-        
-        print("\n--- Closing connection ---")
-        db_connection.close()
-        print("Database connection closed")
+            print("\n--- Counting rows where FeH < 0 ---")
+            total_rows = count_rows(db_connection)
+            print(f"Total rows with FeH < 0: {total_rows}")
+
+        finally:
+            print("\n--- Closing connection ---")
+            db_connection.close()
+            print("Database connection closed")
