@@ -171,3 +171,5 @@ Because most of the work is done automatically, context is essential for effecti
 - **Overhead costs**: Small datasets or simple operations may perform worse in parallel due to coordination overhead
 
 The best way to know if streams are a good solution is through **comparison + metrics** - always benchmark parallel vs sequential performance for your specific use case and data size.
+
+
