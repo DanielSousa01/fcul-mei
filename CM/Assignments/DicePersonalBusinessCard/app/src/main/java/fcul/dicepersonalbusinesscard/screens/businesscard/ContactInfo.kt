@@ -31,88 +31,74 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import fcul.dicepersonalbusinesscard.R
 import fcul.dicepersonalbusinesscard.ui.theme.DicePersonalBusinessCardTheme
-
-@Composable
-fun ContactInfo(
-    modifier: Modifier = Modifier,
-    context: Context = LocalContext.current,
-    alpha: Float = 0.25f
-) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = modifier.padding(16.dp),
-    ) {
-        val buttons = listOf<ContactButton>(
-            ContactButton(
-                onClick = {
-                    val intent = Intent(
-                        Intent.ACTION_DIAL,
-                        "tel:+351962005244".toUri()
-                    )
-                    context.startActivity(intent)
-                },
-                icon = ContactIcon.VectorIcon(Icons.Default.Phone),
-                description = "Phone"
-            ),
-            ContactButton(
-                onClick = {
-                    val intent = Intent(
-                        Intent.ACTION_VIEW,
-                        "https://www.instagram.com/daniel.sousa245?igsh=NTI5dnc3cXB4dTgw".toUri()
-                    )
-                    intent.setPackage("com.instagram.android")
-                    context.startActivity(intent)
-                },
-                icon = ContactIcon.PainterIcon(painterResource(R.drawable.instagram)),
-                description = "Instagram"
-            ),
-            ContactButton(
-                onClick = {
-                    val intent = Intent(
-                        Intent.ACTION_SENDTO,
-                        "mailto:fc66128@alunos.fc.ul.pt".toUri()
-                    )
-                    context.startActivity(intent)
-                },
-                icon = ContactIcon.VectorIcon(Icons.Default.Email),
-                description = "Email"
-            ),
-            ContactButton(
-                onClick = {
-                    val intent = Intent(
-                        Intent.ACTION_VIEW,
-                        "https://www.linkedin.com/in/daniel-sousa-36b890328?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app".toUri()
-                    )
-                    intent.setPackage("com.linkedin.android")
-                    context.startActivity(intent)
-                },
-                icon = ContactIcon.PainterIcon(painterResource(R.drawable.linkedin)),
-                description = "LinkedIn"
-            ),
-            ContactButton(
-                onClick = {
-                    val intent = Intent(
-                        Intent.ACTION_VIEW,
-                        "https://github.com/DanielSousa01".toUri()
-                    )
-                    intent.setPackage("com.github.android")
-                    context.startActivity(intent)
-                },
-                icon = ContactIcon.PainterIcon(painterResource(R.drawable.github)),
-                description = "GitHub"
-            ),
-
-            )
-        ContactButtons(contactButtons = buttons, modifier = modifier, alpha = alpha)
-    }
-}
+import fcul.dicepersonalbusinesscard.utils.TransparentButton
 
 @Composable
 fun ContactButtons(
-    contactButtons: List<ContactButton>,
     modifier: Modifier = Modifier,
-    alpha: Float
+    context: Context = LocalContext.current,
 ) {
+    val contactButtons = listOf(
+        ContactButton(
+            onClick = {
+                val intent = Intent(
+                    Intent.ACTION_DIAL,
+                    "tel:+351962005244".toUri()
+                )
+                context.startActivity(intent)
+            },
+            icon = ContactIcon.VectorIcon(Icons.Default.Phone),
+            description = "Phone"
+        ),
+        ContactButton(
+            onClick = {
+                val intent = Intent(
+                    Intent.ACTION_VIEW,
+                    "https://www.instagram.com/daniel.sousa245?igsh=NTI5dnc3cXB4dTgw".toUri()
+                )
+                intent.setPackage("com.instagram.android")
+                context.startActivity(intent)
+            },
+            icon = ContactIcon.PainterIcon(painterResource(R.drawable.instagram)),
+            description = "Instagram"
+        ),
+        ContactButton(
+            onClick = {
+                val intent = Intent(
+                    Intent.ACTION_SENDTO,
+                    "mailto:fc66128@alunos.fc.ul.pt".toUri()
+                )
+                context.startActivity(intent)
+            },
+            icon = ContactIcon.VectorIcon(Icons.Default.Email),
+            description = "Email"
+        ),
+        ContactButton(
+            onClick = {
+                val intent = Intent(
+                    Intent.ACTION_VIEW,
+                    "https://www.linkedin.com/in/daniel-sousa-36b890328?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app".toUri()
+                )
+                intent.setPackage("com.linkedin.android")
+                context.startActivity(intent)
+            },
+            icon = ContactIcon.PainterIcon(painterResource(R.drawable.linkedin)),
+            description = "LinkedIn"
+        ),
+        ContactButton(
+            onClick = {
+                val intent = Intent(
+                    Intent.ACTION_VIEW,
+                    "https://github.com/DanielSousa01".toUri()
+                )
+                intent.setPackage("com.github.android")
+                context.startActivity(intent)
+            },
+            icon = ContactIcon.PainterIcon(painterResource(R.drawable.github)),
+            description = "GitHub"
+        ),
+
+        )
     for (buttonIdx in 0 until contactButtons.size step 2) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -129,16 +115,10 @@ fun ContactButtons(
                     secondButton
                 }
 
-                Button(
+                TransparentButton(
                     onClick = button.onClick,
                     modifier = modifier
-                        .weight(1f)
-                        .height(60.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Black.copy(alpha = alpha),
-                        contentColor = Color.White
-                    )
+                        .weight(1f),
                 ) {
                     if (button.icon is ContactIcon.VectorIcon) {
                         Icon(button.icon.imageVector, null)
@@ -167,7 +147,7 @@ fun ContactInfoPreview() {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            ContactInfo()
+            ContactButtons()
         }
     }
 }

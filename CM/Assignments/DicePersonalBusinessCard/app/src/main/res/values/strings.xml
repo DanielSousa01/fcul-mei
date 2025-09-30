@@ -5,4 +5,13 @@
     <string name="roll">Roll</string>
     <string name="result_screen">DiceResult</string>
     <string name="back">Back</string>
+    <string name="go_to_result">Go To Result</string>
+    <string name="enter_number">Enter a number between 1 and 6</string>
+
+    <string name="screen1">Screen 1</string>
+    <string name="screen2">Screen 2</string>
+    <string name="screen3">Screen 3</string>
+    <string name="screen5">Screen 5</string>
+    <string name="screen6">Screen 6</string>
+
 </resources>

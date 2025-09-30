@@ -1,4 +1,4 @@
-package fcul.dicepersonalbusinesscard.screens.businesscard
+package fcul.dicepersonalbusinesscard.utils
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize

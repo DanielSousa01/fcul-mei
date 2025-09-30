@@ -1,4 +1,4 @@
-package fcul.dicepersonalbusinesscard.screens.dice.roller
+package fcul.dicepersonalbusinesscard.screens.dice.result
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -25,46 +24,15 @@ import fcul.dicepersonalbusinesscard.R
 import fcul.dicepersonalbusinesscard.screens.Screens
 import fcul.dicepersonalbusinesscard.ui.theme.DicePersonalBusinessCardTheme
 import fcul.dicepersonalbusinesscard.utils.TransparentButton
-import kotlin.ranges.random
 
 @Composable
-fun DiceRollerScreen(
+fun DiceResultScreen(
     navController: NavController,
-    modifier: Modifier = Modifier
-        .fillMaxSize()
-        .wrapContentSize(Alignment.Center)
+    modifier: Modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center),
+    resultShow: Int = 1
 ) {
-    var result by remember { mutableIntStateOf(1) }
-    var previousResult by remember { mutableIntStateOf(1) }
-
-    val newResult = navController.currentBackStackEntry
-        ?.savedStateHandle
-        ?.get<Int>("newResult")
-
-    val newPrevious = navController.currentBackStackEntry
-        ?.savedStateHandle
-        ?.get<Int>("newPrevious")
-
-    LaunchedEffect(newResult) {
-        newResult?.let {
-            result = it
-            navController.currentBackStackEntry
-                ?.savedStateHandle
-                ?.remove<Int>("newResult")
-        }
-    }
-
-    LaunchedEffect(newPrevious) {
-        newPrevious?.let {
-            previousResult = it
-            navController.currentBackStackEntry
-                ?.savedStateHandle
-                ?.remove<Int>("newPrevious")
-        }
-    }
-
+    var result by remember { mutableIntStateOf(resultShow) }
     val diceFace = Screens.getDiceFace(result)
-
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -77,16 +45,13 @@ fun DiceRollerScreen(
         )
         TransparentButton(
             onClick = {
-                previousResult = result
-                result = (1..6).random()
-                      },
+                navController.previousBackStackEntry
+                    ?.savedStateHandle
+                    ?.set("newResult", result)
+                navController.popBackStack()
+            },
         ) {
-            Text(text = stringResource(R.string.roll), fontSize = 24.sp)
-        }
-        TransparentButton(
-            onClick = { navController.navigate(diceFace.screen(result, previousResult)) }
-        ) {
-            Text(text = stringResource(R.string.go_to_result), fontSize = 24.sp)
+            Text(text = stringResource(R.string.back), fontSize = 24.sp)
         }
 
     }
@@ -94,8 +59,8 @@ fun DiceRollerScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun DiceRollerScreenPreview() {
+fun DiceResultScreenPreview() {
     DicePersonalBusinessCardTheme {
-        DiceRollerScreen(navController = NavController(LocalContext.current))
+        DiceResultScreen(navController = NavController(LocalContext.current))
     }
 }

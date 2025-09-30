@@ -1,10 +1,13 @@
-package fcul.dicepersonalbusinesscard.screens.dice.roller
+package fcul.dicepersonalbusinesscard.screens.dice.resultmenu
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,17 +28,16 @@ import fcul.dicepersonalbusinesscard.R
 import fcul.dicepersonalbusinesscard.screens.Screens
 import fcul.dicepersonalbusinesscard.ui.theme.DicePersonalBusinessCardTheme
 import fcul.dicepersonalbusinesscard.utils.TransparentButton
-import kotlin.ranges.random
 
 @Composable
-fun DiceRollerScreen(
+fun DiceResultMenuScreen(
     navController: NavController,
-    modifier: Modifier = Modifier
-        .fillMaxSize()
-        .wrapContentSize(Alignment.Center)
+    modifier: Modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center),
+    resultShow: Int = 1,
+    previousShow: Int = 1
 ) {
-    var result by remember { mutableIntStateOf(1) }
-    var previousResult by remember { mutableIntStateOf(1) }
+    var result by remember { mutableIntStateOf(resultShow) }
+    var previousResult by remember { mutableIntStateOf(previousShow) }
 
     val newResult = navController.currentBackStackEntry
         ?.savedStateHandle
@@ -62,31 +64,64 @@ fun DiceRollerScreen(
                 ?.remove<Int>("newPrevious")
         }
     }
-
-    val diceFace = Screens.getDiceFace(result)
-
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(25.dp)
 
     ) {
-        Image(
-            painter = painterResource(diceFace.image),
-            contentDescription = "Dice showing $result"
-        )
         TransparentButton(
             onClick = {
-                previousResult = result
-                result = (1..6).random()
-                      },
+                navController.popBackStack()
+            },
         ) {
-            Text(text = stringResource(R.string.roll), fontSize = 24.sp)
+            Text(text = stringResource(R.string.back), fontSize = 24.sp)
         }
+
         TransparentButton(
-            onClick = { navController.navigate(diceFace.screen(result, previousResult)) }
+            onClick = {
+                navController.navigate(Screens.BusinessCard.route)
+            },
         ) {
-            Text(text = stringResource(R.string.go_to_result), fontSize = 24.sp)
+            Text(text = stringResource(R.string.screen1), fontSize = 24.sp)
+        }
+
+        TransparentButton(
+            onClick = {
+                navController.navigate(Screens.DiceResult.route
+                    .replace("{result}", result.toString()))
+            },
+        ) {
+            Text(text = stringResource(R.string.screen2), fontSize = 24.sp)
+        }
+
+        TransparentButton(
+            onClick = {
+                navController.navigate(Screens.DiceResultIncrement.route
+                    .replace("{result}", result.toString()))
+            },
+        ) {
+            Text(text = stringResource(R.string.screen3), fontSize = 24.sp)
+        }
+
+        TransparentButton(
+            onClick = {
+                navController.navigate(Screens.DiceResultTextField.route
+                    .replace("{result}", result.toString()))
+            },
+        ) {
+            Text(text = stringResource(R.string.screen5), fontSize = 24.sp)
+        }
+
+        TransparentButton(
+            onClick = {
+                navController.navigate(Screens.DiceResultPrev.route
+                    .replace("{result}", result.toString())
+                    .replace("{previous}", previousResult.toString())
+                )
+            },
+        ) {
+            Text(text = stringResource(R.string.screen6), fontSize = 24.sp)
         }
 
     }
@@ -94,8 +129,8 @@ fun DiceRollerScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun DiceRollerScreenPreview() {
+fun DiceResultMenuScreenPreview() {
     DicePersonalBusinessCardTheme {
-        DiceRollerScreen(navController = NavController(LocalContext.current))
+        DiceResultMenuScreen(navController = NavController(LocalContext.current))
     }
 }

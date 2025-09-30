@@ -1,4 +1,4 @@
-package fcul.dicepersonalbusinesscard.screens.dice.roller
+package fcul.dicepersonalbusinesscard.screens.dice.resulttextfield
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -6,10 +6,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -25,46 +25,16 @@ import fcul.dicepersonalbusinesscard.R
 import fcul.dicepersonalbusinesscard.screens.Screens
 import fcul.dicepersonalbusinesscard.ui.theme.DicePersonalBusinessCardTheme
 import fcul.dicepersonalbusinesscard.utils.TransparentButton
-import kotlin.ranges.random
 
 @Composable
-fun DiceRollerScreen(
+fun DiceResultTextFieldScreen(
     navController: NavController,
-    modifier: Modifier = Modifier
-        .fillMaxSize()
-        .wrapContentSize(Alignment.Center)
+    modifier: Modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center),
+    resultShow: Int = 1
 ) {
-    var result by remember { mutableIntStateOf(1) }
-    var previousResult by remember { mutableIntStateOf(1) }
-
-    val newResult = navController.currentBackStackEntry
-        ?.savedStateHandle
-        ?.get<Int>("newResult")
-
-    val newPrevious = navController.currentBackStackEntry
-        ?.savedStateHandle
-        ?.get<Int>("newPrevious")
-
-    LaunchedEffect(newResult) {
-        newResult?.let {
-            result = it
-            navController.currentBackStackEntry
-                ?.savedStateHandle
-                ?.remove<Int>("newResult")
-        }
-    }
-
-    LaunchedEffect(newPrevious) {
-        newPrevious?.let {
-            previousResult = it
-            navController.currentBackStackEntry
-                ?.savedStateHandle
-                ?.remove<Int>("newPrevious")
-        }
-    }
-
+    var resultText by remember { mutableStateOf(resultShow.toString()) }
+    val result = resultText.toIntOrNull()?.coerceIn(1, 6) ?: 1
     val diceFace = Screens.getDiceFace(result)
-
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -77,25 +47,36 @@ fun DiceRollerScreen(
         )
         TransparentButton(
             onClick = {
-                previousResult = result
-                result = (1..6).random()
-                      },
-        ) {
-            Text(text = stringResource(R.string.roll), fontSize = 24.sp)
-        }
-        TransparentButton(
-            onClick = { navController.navigate(diceFace.screen(result, previousResult)) }
-        ) {
-            Text(text = stringResource(R.string.go_to_result), fontSize = 24.sp)
-        }
+                navController.previousBackStackEntry
+                    ?.savedStateHandle
+                    ?.set("newResult", result)
+                navController.previousBackStackEntry
+                    ?.savedStateHandle
+                    ?.set("newPrevious", resultShow)
 
+                navController.popBackStack()
+            },
+        ) {
+            Text(text = stringResource(R.string.back), fontSize = 24.sp)
+        }
+        TextField(
+            value = resultText,
+            onValueChange = { newValue ->
+                val intValue = newValue.toIntOrNull()
+                if (intValue == null || (intValue in 1..6) || newValue.isEmpty()) {
+                    resultText = newValue
+                }
+            },
+            placeholder = { Text(text = stringResource(R.string.enter_number)) },
+            singleLine = true
+        )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun DiceRollerScreenPreview() {
+fun DiceResultTextFieldPreview() {
     DicePersonalBusinessCardTheme {
-        DiceRollerScreen(navController = NavController(LocalContext.current))
+        DiceResultTextFieldScreen(navController = NavController(LocalContext.current))
     }
 }

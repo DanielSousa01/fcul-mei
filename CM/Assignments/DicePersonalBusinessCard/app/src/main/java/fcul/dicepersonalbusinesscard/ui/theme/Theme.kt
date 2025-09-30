@@ -10,6 +10,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import fcul.dicepersonalbusinesscard.utils.BackGround
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -49,7 +50,7 @@ fun DicePersonalBusinessCardTheme(
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
-
+    BackGround()
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,

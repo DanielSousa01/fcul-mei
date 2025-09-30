@@ -27,7 +27,7 @@ import fcul.dicepersonalbusinesscard.R
 import fcul.dicepersonalbusinesscard.ui.theme.DicePersonalBusinessCardTheme
 
 @Composable
-fun Profile(modifier: Modifier = Modifier, alpha: Float = 0.25f) {
+fun Profile(modifier: Modifier = Modifier, alpha: Float = 0.40f) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(10.dp))
