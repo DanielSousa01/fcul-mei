@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">DicePersonalBusinessCard</string>
+    <string name="name">Daniel Martins Cabrita de Sousa</string>
+    <string name="profession">MSc Student in Software Engineering</string>
+    <string name="roll">Roll</string>
+    <string name="result_screen">DiceResult</string>
+    <string name="back">Back</string>
+</resources>
