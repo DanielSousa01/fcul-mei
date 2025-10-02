@@ -1,13 +1,9 @@
 package fcul.dicepersonalbusinesscard.screens.dice.resultmenu
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,7 +14,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -32,7 +27,9 @@ import fcul.dicepersonalbusinesscard.utils.TransparentButton
 @Composable
 fun DiceResultMenuScreen(
     navController: NavController,
-    modifier: Modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center),
+    modifier: Modifier = Modifier
+        .fillMaxSize()
+        .wrapContentSize(Alignment.Center),
     resultShow: Int = 1,
     previousShow: Int = 1
 ) {
@@ -88,8 +85,10 @@ fun DiceResultMenuScreen(
 
         TransparentButton(
             onClick = {
-                navController.navigate(Screens.DiceResult.route
-                    .replace("{result}", result.toString()))
+                navController.navigate(
+                    Screens.DiceResult.route
+                        .replace("{result}", result.toString())
+                )
             },
         ) {
             Text(text = stringResource(R.string.screen2), fontSize = 24.sp)
@@ -97,8 +96,10 @@ fun DiceResultMenuScreen(
 
         TransparentButton(
             onClick = {
-                navController.navigate(Screens.DiceResultIncrement.route
-                    .replace("{result}", result.toString()))
+                navController.navigate(
+                    Screens.DiceResultIncrement.route
+                        .replace("{result}", result.toString())
+                )
             },
         ) {
             Text(text = stringResource(R.string.screen3), fontSize = 24.sp)
@@ -106,8 +107,10 @@ fun DiceResultMenuScreen(
 
         TransparentButton(
             onClick = {
-                navController.navigate(Screens.DiceResultTextField.route
-                    .replace("{result}", result.toString()))
+                navController.navigate(
+                    Screens.DiceResultTextField.route
+                        .replace("{result}", result.toString())
+                )
             },
         ) {
             Text(text = stringResource(R.string.screen5), fontSize = 24.sp)
@@ -115,9 +118,10 @@ fun DiceResultMenuScreen(
 
         TransparentButton(
             onClick = {
-                navController.navigate(Screens.DiceResultPrev.route
-                    .replace("{result}", result.toString())
-                    .replace("{previous}", previousResult.toString())
+                navController.navigate(
+                    Screens.DiceResultPrev.route
+                        .replace("{result}", result.toString())
+                        .replace("{previous}", previousResult.toString())
                 )
             },
         ) {

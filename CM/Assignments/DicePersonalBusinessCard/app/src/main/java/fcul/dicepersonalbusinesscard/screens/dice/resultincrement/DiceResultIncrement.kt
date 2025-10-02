@@ -31,7 +31,9 @@ import fcul.dicepersonalbusinesscard.utils.TransparentButton
 @Composable
 fun DiceResultIncrementScreen(
     navController: NavController,
-    modifier: Modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center),
+    modifier: Modifier = Modifier
+        .fillMaxSize()
+        .wrapContentSize(Alignment.Center),
     resultShow: Int = 1
 ) {
     var result by remember { mutableIntStateOf(resultShow) }
@@ -47,11 +49,12 @@ fun DiceResultIncrementScreen(
             contentDescription = "Dice showing $result"
         )
         TransparentButton(
-            onClick ={ if (result < 6) result += 1 }
+            onClick = { if (result < 6) result += 1 }
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
-                contentDescription = "Increment" )
+                contentDescription = "Increment"
+            )
         }
         TransparentButton(
             onClick = {

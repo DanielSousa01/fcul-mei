@@ -28,7 +28,9 @@ import fcul.dicepersonalbusinesscard.utils.TransparentButton
 @Composable
 fun DiceResultScreen(
     navController: NavController,
-    modifier: Modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center),
+    modifier: Modifier = Modifier
+        .fillMaxSize()
+        .wrapContentSize(Alignment.Center),
     resultShow: Int = 1
 ) {
     var result by remember { mutableIntStateOf(resultShow) }

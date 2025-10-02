@@ -25,7 +25,6 @@ import fcul.dicepersonalbusinesscard.R
 import fcul.dicepersonalbusinesscard.screens.Screens
 import fcul.dicepersonalbusinesscard.ui.theme.DicePersonalBusinessCardTheme
 import fcul.dicepersonalbusinesscard.utils.TransparentButton
-import kotlin.ranges.random
 
 @Composable
 fun DiceRollerScreen(
@@ -79,7 +78,7 @@ fun DiceRollerScreen(
             onClick = {
                 previousResult = result
                 result = (1..6).random()
-                      },
+            },
         ) {
             Text(text = stringResource(R.string.roll), fontSize = 24.sp)
         }

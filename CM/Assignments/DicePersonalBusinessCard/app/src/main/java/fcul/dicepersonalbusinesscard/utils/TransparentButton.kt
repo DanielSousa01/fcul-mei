@@ -15,7 +15,7 @@ fun TransparentButton(
     onClick: () -> Unit,
     alpha: Float = 0.40f,
     content: @Composable () -> Unit,
-    ) {
+) {
     Button(
         onClick = onClick,
         modifier = modifier

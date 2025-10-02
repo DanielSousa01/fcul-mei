@@ -1,6 +1,5 @@
 package fcul.dicepersonalbusinesscard.navigation
 
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -27,30 +26,32 @@ fun NavGraph(navController: NavHostController) {
         composable(Screens.BusinessCard.route) {
             BusinessCardScreen(navController = navController)
         }
-        composable(Screens.DiceResult.route) { navBackStack->
-            val resultShow: Int = navBackStack.arguments?.getString("result")?.toIntOrNull()?:1
+        composable(Screens.DiceResult.route) { navBackStack ->
+            val resultShow: Int = navBackStack.arguments?.getString("result")?.toIntOrNull() ?: 1
             DiceResultScreen(navController = navController, resultShow = resultShow)
         }
-        composable(Screens.DiceResultIncrement.route) { navBackStack->
-            val resultShow: Int = navBackStack.arguments?.getString("result")?.toIntOrNull()?:1
+        composable(Screens.DiceResultIncrement.route) { navBackStack ->
+            val resultShow: Int = navBackStack.arguments?.getString("result")?.toIntOrNull() ?: 1
             DiceResultIncrementScreen(navController = navController, resultShow = resultShow)
         }
-        composable(Screens.DiceResultMenu.route) {navBackStack->
-            val resultShow: Int = navBackStack.arguments?.getString("result")?.toIntOrNull()?:1
-            val previousShow: Int = navBackStack.arguments?.getString("previous")?.toIntOrNull()?:1
+        composable(Screens.DiceResultMenu.route) { navBackStack ->
+            val resultShow: Int = navBackStack.arguments?.getString("result")?.toIntOrNull() ?: 1
+            val previousShow: Int =
+                navBackStack.arguments?.getString("previous")?.toIntOrNull() ?: 1
             DiceResultMenuScreen(
                 navController = navController,
                 resultShow = resultShow,
                 previousShow = previousShow
             )
         }
-        composable(Screens.DiceResultTextField.route) { navBackStack->
-            val resultShow: Int = navBackStack.arguments?.getString("result")?.toIntOrNull()?:1
+        composable(Screens.DiceResultTextField.route) { navBackStack ->
+            val resultShow: Int = navBackStack.arguments?.getString("result")?.toIntOrNull() ?: 1
             DiceResultTextFieldScreen(navController = navController, resultShow = resultShow)
         }
-        composable(Screens.DiceResultPrev.route) { navBackStack->
-            val resultShow: Int = navBackStack.arguments?.getString("result")?.toIntOrNull()?:1
-            val previousShow: Int = navBackStack.arguments?.getString("previous")?.toIntOrNull()?:1
+        composable(Screens.DiceResultPrev.route) { navBackStack ->
+            val resultShow: Int = navBackStack.arguments?.getString("result")?.toIntOrNull() ?: 1
+            val previousShow: Int =
+                navBackStack.arguments?.getString("previous")?.toIntOrNull() ?: 1
             DiceResultPrevScreen(
                 navController = navController,
                 resultShow = resultShow,
