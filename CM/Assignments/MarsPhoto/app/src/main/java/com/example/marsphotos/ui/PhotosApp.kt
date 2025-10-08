@@ -1,13 +1,8 @@
-
 @file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.example.marsphotos.ui
 
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.BottomAppBarDefaults
-import androidx.compose.material3.BottomAppBarScrollBehavior
-import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -23,7 +18,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.marsphotos.R
 import com.example.marsphotos.ui.screens.HomeScreen
-import com.example.marsphotos.ui.screens.viewmodels.PhotosUiState
 import com.example.marsphotos.ui.screens.viewmodels.PhotosViewModel
 
 @Composable

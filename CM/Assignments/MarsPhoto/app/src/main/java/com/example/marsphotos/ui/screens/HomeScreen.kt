@@ -15,7 +15,6 @@
  */
 package com.example.marsphotos.ui.screens
 
-import android.util.Log
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,7 +39,9 @@ fun HomeScreen(
                 randomPhotos = photosUiState.randomPhotos,
                 randomPhoto = photosUiState.randomPhoto,
                 randomize = photosUiState.randomize,
-                modifier = modifier.fillMaxWidth().padding(contentPadding),
+                modifier = modifier
+                    .fillMaxWidth()
+                    .padding(contentPadding),
             )
 
         is PhotosUiState.Error -> ErrorScreen(modifier = modifier.fillMaxSize())

@@ -13,13 +13,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.marsphotos.R
@@ -58,13 +56,11 @@ fun ResultScreen(
             marsPhotos,
             marsPhoto,
             imagesModifier,
-            blur,
-            grayScale
         )
         OptionMenu(
             randomize,
-            {blur = !blur},
-            {grayScale = !grayScale}
+            { blur = !blur },
+            { grayScale = !grayScale }
         )
     }
 }
@@ -77,22 +73,20 @@ fun ImagePlaceholder(
     blurImage: Boolean = false,
     grayScaleImage: Boolean = false
 ) {
+    val uriBuilder = photo.imgSrc.toUri().buildUpon()
+    if (blurImage) uriBuilder.appendQueryParameter("blur", "10")
+    if (grayScaleImage) uriBuilder.appendQueryParameter("grayscale", null)
+    val finalUri = uriBuilder.build()
+
     Text(text = photos)
     AsyncImage(
         model = ImageRequest.Builder(LocalContext.current)
-            .data(photo.imgSrc)
+            .data(finalUri)
             .crossfade(true)
             .build(),
         contentDescription = stringResource(R.string.photos_api),
         contentScale = ContentScale.Crop,
-        colorFilter = if (grayScaleImage) {
-            ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
-        } else {
-            null
-        },
-        modifier = modifier.blur(
-            if (blurImage) 10.dp else 0.dp
-        )
+        modifier = modifier
     )
 }
 
