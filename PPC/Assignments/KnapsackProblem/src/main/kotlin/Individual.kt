@@ -1,5 +1,3 @@
-package knapsack
-
 import java.util.*
 
 /*
