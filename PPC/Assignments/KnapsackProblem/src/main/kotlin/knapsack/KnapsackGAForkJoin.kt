@@ -10,6 +10,7 @@ import java.util.*
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.ForkJoinTask.invokeAll
 import java.util.concurrent.RecursiveAction
+import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicReference
 
 class KnapsackGAForkJoin(override val silent: Boolean = false) : KnapsackGA {
@@ -27,7 +28,7 @@ class KnapsackGAForkJoin(override val silent: Boolean = false) : KnapsackGA {
         val action = object : RecursiveAction() {
             override fun compute() {
                 computeRange(0, POP_SIZE) { start, end ->
-                    val localRandom = Random()
+                    val localRandom = ThreadLocalRandom.current()
                     for (i in start until end) {
                         population[i] = Individual.createRandom(localRandom)
                     }
@@ -39,15 +40,15 @@ class KnapsackGAForkJoin(override val silent: Boolean = false) : KnapsackGA {
         forkJoinPool.invoke(action)
     }
 
-    override fun run() {
+    override fun run(): Individual {
         for (generation in 0 until N_GENERATIONS) {
             // Step1 - Calculate Fitness
             calculateFitness()
 
             // Step2 - Print the best individual so far.
             val best = bestOfPopulation()
-
-            println("Best at generation $generation is $best with ${best.fitness}")
+            if (!silent)
+                println("Best at generation $generation is $best with ${best.fitness}")
 
             // Step3 - Find parents to mate (cross-over)
             val newPopulation = calculateBestPopulation(best)
@@ -55,6 +56,8 @@ class KnapsackGAForkJoin(override val silent: Boolean = false) : KnapsackGA {
             // Step4 - Mutate
             mutate(newPopulation)
         }
+        
+        return population.first()!!
     }
 
     private fun calculateFitness() {

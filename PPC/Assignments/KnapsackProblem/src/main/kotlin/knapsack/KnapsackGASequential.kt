@@ -22,7 +22,7 @@ class KnapsackGASequential(override val silent: Boolean = false) : KnapsackGA {
         }
     }
 
-    override fun run() {
+    override fun run(): Individual {
         for (generation in 0 until N_GENERATIONS) {
             // Step1 - Calculate Fitness
             for (i in 0 until POP_SIZE) {
@@ -54,6 +54,8 @@ class KnapsackGASequential(override val silent: Boolean = false) : KnapsackGA {
             }
             population = newPopulation
         }
+
+        return population.first()!!
     }
 
     private fun tournament(r: Random): Individual {

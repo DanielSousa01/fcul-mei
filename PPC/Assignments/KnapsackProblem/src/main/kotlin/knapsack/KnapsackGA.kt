@@ -1,8 +1,10 @@
 package knapsack
 
+import Individual
+
 sealed interface KnapsackGA {
     val silent: Boolean
-    fun run()
+    fun run(): Individual
 
     companion object {
         const val N_GENERATIONS = 500
