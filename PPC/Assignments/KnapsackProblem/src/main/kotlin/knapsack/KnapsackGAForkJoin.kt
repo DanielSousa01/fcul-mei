@@ -56,7 +56,7 @@ class KnapsackGAForkJoin(override val silent: Boolean = false) : KnapsackGA {
             // Step4 - Mutate
             mutate(newPopulation)
         }
-        
+
         return population.first()!!
     }
 
