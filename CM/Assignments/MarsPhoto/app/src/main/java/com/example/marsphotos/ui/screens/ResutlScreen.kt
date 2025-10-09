@@ -96,7 +96,11 @@ fun OptionMenu(
     blur: () -> Unit,
     grayScale: () -> Unit,
 ) {
-    Row {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Button(onClick = randomize) {
             Text(text = stringResource(R.string.roll))
         }
