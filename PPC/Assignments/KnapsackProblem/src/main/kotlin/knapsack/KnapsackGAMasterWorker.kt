@@ -19,43 +19,35 @@ class KnapsackGAMasterWorker(override val silent: Boolean = false) : KnapsackGA 
     { Individual.createRandom(ThreadLocalRandom.current()) }
 
     private val taskQueue: BlockingQueue<Task> = LinkedBlockingQueue()
-    private val numWorkers = Runtime.getRuntime().availableProcessors()
-    private val chunksSize = POP_SIZE / numWorkers
 
+    private val numWorkers = Runtime.getRuntime().availableProcessors()
     private val workers = ArrayList<Thread>(numWorkers)
 
-    init {
-        startWorkers()
-    }
-
-    private fun startWorkers() {
-        repeat(numWorkers) {
-            val worker = Thread(Worker(taskQueue))
-            workers.add(worker)
-            worker.start()
-        }
-    }
+    private val chunksSize = POP_SIZE / numWorkers
 
     override fun run(): Individual {
-        for (generation in 0 until N_GENERATIONS) {
-            // Step1 - Calculate Fitness
-            calculateFitness()
+        startWorkers()
+        try {
+            for (generation in 0 until N_GENERATIONS) {
+                // Step1 - Calculate Fitness
+                calculateFitness()
 
-            // Step2 - Print the best individual so far.
-            val best = bestOfPopulation()
-            if (!silent)
-                println("${this::class.simpleName}: Best at generation $generation is $best with ${best.fitness}")
+                // Step2 - Print the best individual so far.
+                val best = bestOfPopulation()
+                if (!silent)
+                    println("${this::class.simpleName}: Best at generation $generation is $best with ${best.fitness}")
 
-            // Step3 - Find parents to mate (cross-over)
-            val newPopulation = calculateBestPopulation(best)
+                // Step3 - Find parents to mate (cross-over)
+                val newPopulation = calculateBestPopulation(best)
 
-            // Step4 - Mutate
-            mutate(newPopulation)
+                // Step4 - Mutate
+                mutate(newPopulation)
+            }
+
+            return population.first()
+        } finally {
+            stopWorkers()
         }
-
-        stopWorkers()
-
-        return population.first()
     }
 
     private fun calculateFitness() {
@@ -152,13 +144,17 @@ class KnapsackGAMasterWorker(override val silent: Boolean = false) : KnapsackGA 
         population = newPopulation
     }
 
+    private fun startWorkers() {
+        repeat(numWorkers) {
+            val worker = Thread(Worker(taskQueue))
+            workers.add(worker)
+            worker.start()
+        }
+    }
+
     private fun stopWorkers() {
         repeat(numWorkers) {
             taskQueue.put(Task(TaskType.POISON_PILL))
-        }
-
-        for (worker in workers) {
-            worker.join()
         }
     }
 

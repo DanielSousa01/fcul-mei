@@ -5,6 +5,7 @@ import knapsack.KnapsackGA.Companion.N_GENERATIONS
 import knapsack.KnapsackGA.Companion.POP_SIZE
 import knapsack.KnapsackGA.Companion.PROB_MUTATION
 import java.util.*
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.ThreadLocalRandom
@@ -15,29 +16,31 @@ class KnapsackGAScatterGather(override val silent: Boolean = false) : KnapsackGA
     { Individual.createRandom(ThreadLocalRandom.current()) }
 
     private val maxThreads = Runtime.getRuntime().availableProcessors()
-    private val threadPool = Executors.newFixedThreadPool(maxThreads)
+    private lateinit var threadPool: ExecutorService
 
     override fun run(): Individual {
-        for (generation in 0 until N_GENERATIONS) {
-            // Step1 - Calculate Fitness
-            calculateFitness()
+        threadPool = Executors.newFixedThreadPool(maxThreads)
+        try {
+            for (generation in 0 until N_GENERATIONS) {
+                // Step1 - Calculate Fitness
+                calculateFitness()
 
-            // Step2 - Print the best individual so far.
-            val best = bestOfPopulation()
-            if (!silent)
-                println("${this::class.simpleName}: Best at generation $generation is $best with ${best.fitness}")
+                // Step2 - Print the best individual so far.
+                val best = bestOfPopulation()
+                if (!silent)
+                    println("${this::class.simpleName}: Best at generation $generation is $best with ${best.fitness}")
 
-            // Step3 - Find parents to mate (cross-over)
-            val newPopulation = calculateBestPopulation(best)
+                // Step3 - Find parents to mate (cross-over)
+                val newPopulation = calculateBestPopulation(best)
 
-            // Step4 - Mutate
-            mutate(newPopulation)
+                // Step4 - Mutate
+                mutate(newPopulation)
+            }
+
+            return population.first()
+        } finally {
+            threadPool.shutdown()
         }
-
-        threadPool.shutdown()
-        threadPool.awaitTermination(1, java.util.concurrent.TimeUnit.MINUTES)
-
-        return population.first()
     }
 
     private fun calculateFitness() {

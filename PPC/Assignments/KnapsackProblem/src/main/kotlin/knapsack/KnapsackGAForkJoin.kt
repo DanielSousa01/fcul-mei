@@ -17,26 +17,31 @@ class KnapsackGAForkJoin(override val silent: Boolean = false) : KnapsackGA {
     { Individual.createRandom(ThreadLocalRandom.current()) }
 
     private val maxThreads = Runtime.getRuntime().availableProcessors()
-    private val forkJoinPool = ForkJoinPool(maxThreads)
+    private lateinit var forkJoinPool: ForkJoinPool
 
     override fun run(): Individual {
-        for (generation in 0 until N_GENERATIONS) {
-            // Step1 - Calculate Fitness
-            calculateFitness()
+        forkJoinPool = ForkJoinPool(maxThreads)
+        try {
+            for (generation in 0 until N_GENERATIONS) {
+                // Step1 - Calculate Fitness
+                calculateFitness()
 
-            // Step2 - Print the best individual so far.
-            val best = bestOfPopulation()
-            if (!silent)
-                println("${this::class.simpleName}: Best at generation $generation is $best with ${best.fitness}")
+                // Step2 - Print the best individual so far.
+                val best = bestOfPopulation()
+                if (!silent)
+                    println("${this::class.simpleName}: Best at generation $generation is $best with ${best.fitness}")
 
-            // Step3 - Find parents to mate (cross-over)
-            val newPopulation = calculateBestPopulation(best)
+                // Step3 - Find parents to mate (cross-over)
+                val newPopulation = calculateBestPopulation(best)
 
-            // Step4 - Mutate
-            mutate(newPopulation)
+                // Step4 - Mutate
+                mutate(newPopulation)
+            }
+
+            return population.first()
+        } finally {
+            forkJoinPool.shutdown()
         }
-
-        return population.first()
     }
 
     private fun calculateFitness() {
