@@ -28,6 +28,9 @@ open class KnapsackBenchmark {
         knapsackGATarget = when (implementation) {
             "sequential" -> KnapsackGASequential(silent = true)
             "forkjoin" -> KnapsackGAForkJoin(silent = true)
+            "scattergather" -> knapsack.KnapsackGAScatterGather(silent = true)
+            "masterworker" -> knapsack.KnapsackGAMasterWorker(silent = true)
+            "streams" -> knapsack.KnapsackGAStreams(silent = true)
             else -> throw IllegalArgumentException("Unknown implementation: $implementation")
         }
     }
@@ -39,17 +42,4 @@ open class KnapsackBenchmark {
         bh.consume(result)
     }
 
-//    @Benchmark
-//    @Fork(jvmArgs = ["-XX:+UseParallelGC"])
-//    fun benchmarkKnapsackGAWithParallelGC(bh: Blackhole) {
-//        val result = knapsackGATarget.run()
-//        bh.consume(result)
-//    }
-//
-//    @Benchmark
-//    @Fork(jvmArgs = ["-XX:+UseG1GC"])
-//    fun benchmarkKnapsackGAWithG1GC(bh: Blackhole) {
-//        val result = knapsackGATarget.run()
-//        bh.consume(result)
-//    }
 }
