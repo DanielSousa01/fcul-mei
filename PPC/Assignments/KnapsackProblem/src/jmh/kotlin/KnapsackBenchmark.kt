@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit
 @Measurement(iterations = 5, time = 3, timeUnit = TimeUnit.SECONDS)
 open class KnapsackBenchmark {
 
-    @Param("sequential", "forkjoin")
+    @Param("sequential", "forkjoin", "scattergather", "masterworker", "streams")
     lateinit var implementation: String
 
     private lateinit var knapsackGATarget: KnapsackGA

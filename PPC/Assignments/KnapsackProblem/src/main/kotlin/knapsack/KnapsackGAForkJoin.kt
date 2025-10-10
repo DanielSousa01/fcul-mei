@@ -9,11 +9,12 @@ import java.util.*
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.ForkJoinTask.invokeAll
 import java.util.concurrent.RecursiveAction
+import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicReference
 
 class KnapsackGAForkJoin(override val silent: Boolean = false) : KnapsackGA {
-    private val r = Random()
-    private var population: Array<Individual> = Array(POP_SIZE) { Individual.createRandom(r) }
+    private var population: Array<Individual> = Array(POP_SIZE)
+    { Individual.createRandom(ThreadLocalRandom.current()) }
 
     private val maxThreads = Runtime.getRuntime().availableProcessors()
     private val forkJoinPool = ForkJoinPool(maxThreads)
@@ -81,13 +82,13 @@ class KnapsackGAForkJoin(override val silent: Boolean = false) : KnapsackGA {
     }
 
     private fun calculateBestPopulation(best: Individual): Array<Individual> {
-        val newPopulation = Array<Individual>(POP_SIZE) { best }
+        val newPopulation = Array(POP_SIZE) { best }
 
         val action = object : RecursiveAction() {
             override fun compute() {
                 computeRange(1, POP_SIZE) { start, end ->
+                    val r = ThreadLocalRandom.current()
                     for (i in start until end) {
-                        // We select two parents, using a tournament.
                         val parent1 = tournament(r, population)
                         val parent2 = tournament(r, population)
 
@@ -105,6 +106,7 @@ class KnapsackGAForkJoin(override val silent: Boolean = false) : KnapsackGA {
         val action = object : RecursiveAction() {
             override fun compute() {
                 computeRange(1, POP_SIZE) { start, end ->
+                    val r = ThreadLocalRandom.current()
                     for (i in start until end) {
                         if (r.nextDouble() < PROB_MUTATION) {
                             newPopulation[i].mutate(r)

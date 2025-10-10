@@ -5,11 +5,12 @@ import knapsack.KnapsackGA.Companion.N_GENERATIONS
 import knapsack.KnapsackGA.Companion.POP_SIZE
 import knapsack.KnapsackGA.Companion.PROB_MUTATION
 import java.util.*
+import java.util.concurrent.ThreadLocalRandom
 import java.util.stream.IntStream
 
 class KnapsackGAStreams(override val silent: Boolean = false) : KnapsackGA {
-    private val r = Random()
-    private var population: Array<Individual> = Array(POP_SIZE) { Individual.createRandom(r) }
+    private var population: Array<Individual> = Array(POP_SIZE)
+    { Individual.createRandom(ThreadLocalRandom.current()) }
 
     override fun run(): Individual {
         for (generation in 0 until N_GENERATIONS) {
@@ -32,16 +33,16 @@ class KnapsackGAStreams(override val silent: Boolean = false) : KnapsackGA {
     }
 
     private fun calculateFitness() {
-        IntStream.range(0, POP_SIZE)
-            .parallel()
-            .forEach { i ->
-                population[i].measureFitness()
-            }
+        population
+            .asList()
+            .parallelStream()
+            .forEach { it.measureFitness() }
     }
 
     private fun bestOfPopulation(): Individual =
-        Arrays.stream(population)
-            .parallel()
+        population
+            .asList()
+            .parallelStream()
             .max(Comparator.comparingInt { it.fitness })
             .get()
 
@@ -52,6 +53,7 @@ class KnapsackGAStreams(override val silent: Boolean = false) : KnapsackGA {
         IntStream.range(1, POP_SIZE)
             .parallel()
             .forEach {
+                val r = ThreadLocalRandom.current()
                 val parent1 = tournament(r, population)
                 val parent2 = tournament(r, population)
                 newPopulation[it] = parent1.crossoverWith(parent2, r)
@@ -64,8 +66,9 @@ class KnapsackGAStreams(override val silent: Boolean = false) : KnapsackGA {
         IntStream.range(1, POP_SIZE)
             .parallel()
             .forEach {
+                val r = ThreadLocalRandom.current()
                 if (r.nextDouble() < PROB_MUTATION) {
-                    population[it].mutate(r)
+                    newPopulation[it].mutate(r)
                 }
             }
 

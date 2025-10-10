@@ -7,11 +7,12 @@ import knapsack.KnapsackGA.Companion.PROB_MUTATION
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
+import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicReference
 
 class KnapsackGAScatterGather(override val silent: Boolean = false) : KnapsackGA {
-    private val r = Random()
-    private var population: Array<Individual> = Array(POP_SIZE) { Individual.createRandom(r) }
+    private var population: Array<Individual> = Array(POP_SIZE)
+    { Individual.createRandom(ThreadLocalRandom.current()) }
 
     private val maxThreads = Runtime.getRuntime().availableProcessors()
     private val threadPool = Executors.newFixedThreadPool(maxThreads)
@@ -75,6 +76,7 @@ class KnapsackGAScatterGather(override val silent: Boolean = false) : KnapsackGA
         val newPopulation = Array(POP_SIZE) { best }
 
         computeFutures(1, POP_SIZE) { start, end ->
+            val r = ThreadLocalRandom.current()
             for (i in start until end) {
                 val parent1 = tournament(r, population)
                 val parent2 = tournament(r, population)
@@ -88,6 +90,7 @@ class KnapsackGAScatterGather(override val silent: Boolean = false) : KnapsackGA
 
     private fun mutate(newPopulation: Array<Individual>) {
         computeFutures(1, POP_SIZE) { start, end ->
+            val r = ThreadLocalRandom.current()
             for (i in start until end) {
                 if (r.nextDouble() < PROB_MUTATION) {
                     newPopulation[i].mutate(r)

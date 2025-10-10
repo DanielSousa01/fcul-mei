@@ -11,11 +11,12 @@ import java.util.*
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicReference
 
 class KnapsackGAMasterWorker(override val silent: Boolean = false) : KnapsackGA {
-    private val r = Random()
-    private var population: Array<Individual> = Array(POP_SIZE) { Individual.createRandom(r) }
+    private var population: Array<Individual> = Array(POP_SIZE)
+    { Individual.createRandom(ThreadLocalRandom.current()) }
 
     private val taskQueue: BlockingQueue<Task> = LinkedBlockingQueue()
     private val numWorkers = Runtime.getRuntime().availableProcessors()
@@ -115,6 +116,7 @@ class KnapsackGAMasterWorker(override val silent: Boolean = false) : KnapsackGA 
             val end = if (i == numWorkers - 1) POP_SIZE else 1 + (i + 1) * chunksSize
 
             taskQueue.put(Task(TaskType.RUNNABLE) {
+                val r = ThreadLocalRandom.current()
                 for (j in start until end) {
                     val parent1 = tournament(r, population)
                     val parent2 = tournament(r, population)
@@ -136,6 +138,7 @@ class KnapsackGAMasterWorker(override val silent: Boolean = false) : KnapsackGA 
             val end = if (i == numWorkers - 1) POP_SIZE else 1 + (i + 1) * chunksSize
 
             taskQueue.put(Task(TaskType.RUNNABLE) {
+                val r = ThreadLocalRandom.current()
                 for (j in start until end) {
                     if (r.nextDouble() < PROB_MUTATION) {
                         newPopulation[j].mutate(r)
