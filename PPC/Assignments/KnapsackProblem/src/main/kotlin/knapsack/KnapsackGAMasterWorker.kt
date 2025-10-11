@@ -7,7 +7,6 @@ import knapsack.KnapsackGA.Companion.POP_SIZE
 import knapsack.KnapsackGA.Companion.PROB_MUTATION
 import worker.Task
 import worker.TaskType
-import java.util.*
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.LinkedBlockingQueue

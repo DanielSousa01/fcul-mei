@@ -4,15 +4,16 @@ import Individual
 import knapsack.KnapsackGA.Companion.N_GENERATIONS
 import knapsack.KnapsackGA.Companion.POP_SIZE
 import knapsack.KnapsackGA.Companion.PROB_MUTATION
-import knapsack.KnapsackGA.Companion.THRESHOLD
-import java.util.*
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.ForkJoinTask.invokeAll
 import java.util.concurrent.RecursiveAction
 import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicReference
 
-class KnapsackGAForkJoin(override val silent: Boolean = false) : KnapsackGA {
+class KnapsackGAForkJoin(
+    override val silent: Boolean = false,
+    private val threshold: Int = 1000
+) : KnapsackGA {
     private var population: Array<Individual> = Array(POP_SIZE)
     { Individual.createRandom(ThreadLocalRandom.current()) }
 
@@ -127,7 +128,7 @@ class KnapsackGAForkJoin(override val silent: Boolean = false) : KnapsackGA {
     }
 
     private fun computeRange(start: Int, end: Int, action: (Int, Int) -> Unit) {
-        if (end - start <= THRESHOLD) {
+        if (end - start <= threshold) {
             action(start, end)
         } else {
             val mid = (start + end) / 2

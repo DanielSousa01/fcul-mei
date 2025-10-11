@@ -4,7 +4,6 @@ import Individual
 import knapsack.KnapsackGA.Companion.N_GENERATIONS
 import knapsack.KnapsackGA.Companion.POP_SIZE
 import knapsack.KnapsackGA.Companion.PROB_MUTATION
-import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
