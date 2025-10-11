@@ -24,7 +24,6 @@ open class KnapsackBenchmark {
 
     @Setup(Level.Trial)
     fun setup() {
-        System.setOut(PrintStream(ByteArrayOutputStream()))
         knapsackGATarget = when (implementation) {
             "sequential" -> KnapsackGASequential(silent = true)
             "forkjoin1k" -> KnapsackGAForkJoin(silent = true)
@@ -39,7 +38,14 @@ open class KnapsackBenchmark {
 
 
     @Benchmark
-    fun benchmarkKnapsackGA(bh: Blackhole) {
+    fun benchmarkKnapsackGAMaxThreads(bh: Blackhole) {
+        val result = knapsackGATarget.run()
+        bh.consume(result)
+    }
+
+    @Benchmark
+    fun benchmarkKnapsackGA4Threads(bh: Blackhole) {
+        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "4")
         val result = knapsackGATarget.run()
         bh.consume(result)
     }
