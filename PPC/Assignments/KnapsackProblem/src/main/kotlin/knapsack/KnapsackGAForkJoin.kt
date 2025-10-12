@@ -12,12 +12,12 @@ import java.util.concurrent.atomic.AtomicReference
 
 class KnapsackGAForkJoin(
     override val silent: Boolean = false,
+    private val maxThreads: Int = Runtime.getRuntime().availableProcessors(),
     private val threshold: Int = 1000
 ) : KnapsackGA {
     private var population: Array<Individual> = Array(POP_SIZE)
     { Individual.createRandom(ThreadLocalRandom.current()) }
 
-    private val maxThreads = Runtime.getRuntime().availableProcessors()
     private lateinit var forkJoinPool: ForkJoinPool
 
     override fun run(): Individual {

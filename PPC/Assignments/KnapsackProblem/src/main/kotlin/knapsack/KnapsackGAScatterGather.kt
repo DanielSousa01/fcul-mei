@@ -10,11 +10,13 @@ import java.util.concurrent.Future
 import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicReference
 
-class KnapsackGAScatterGather(override val silent: Boolean = false) : KnapsackGA {
+class KnapsackGAScatterGather(
+    override val silent: Boolean = false,
+    private val maxThreads: Int = Runtime.getRuntime().availableProcessors()
+) : KnapsackGA {
     private var population: Array<Individual> = Array(POP_SIZE)
     { Individual.createRandom(ThreadLocalRandom.current()) }
 
-    private val maxThreads = Runtime.getRuntime().availableProcessors()
     private lateinit var threadPool: ExecutorService
 
     override fun run(): Individual {

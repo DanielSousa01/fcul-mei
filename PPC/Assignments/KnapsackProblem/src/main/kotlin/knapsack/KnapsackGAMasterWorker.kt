@@ -13,19 +13,22 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicReference
 
-class KnapsackGAMasterWorker(override val silent: Boolean = false) : KnapsackGA {
+class KnapsackGAMasterWorker(
+    override val silent: Boolean = false,
+    private val maxThreads: Int = Runtime.getRuntime().availableProcessors()
+) : KnapsackGA {
     private var population: Array<Individual> = Array(POP_SIZE)
     { Individual.createRandom(ThreadLocalRandom.current()) }
 
     private val taskQueue: BlockingQueue<Task> = LinkedBlockingQueue()
 
-    private val numWorkers = Runtime.getRuntime().availableProcessors()
-    private val workers = ArrayList<Thread>(numWorkers)
+    private val workers = ArrayList<Thread>(maxThreads)
 
-    private val chunksSize = POP_SIZE / numWorkers
+    private val chunksSize = POP_SIZE / maxThreads
 
     override fun run(): Individual {
         startWorkers()
+        println(maxThreads)
         try {
             for (generation in 0 until N_GENERATIONS) {
                 // Step1 - Calculate Fitness
@@ -50,10 +53,10 @@ class KnapsackGAMasterWorker(override val silent: Boolean = false) : KnapsackGA 
     }
 
     private fun calculateFitness() {
-        val latch = CountDownLatch(numWorkers)
-        for (i in 0 until numWorkers) {
+        val latch = CountDownLatch(maxThreads)
+        for (i in 0 until maxThreads) {
             val start = i * chunksSize
-            val end = if (i == numWorkers - 1) POP_SIZE else (i + 1) * chunksSize
+            val end = if (i == maxThreads - 1) POP_SIZE else (i + 1) * chunksSize
 
             taskQueue.put(Task(TaskType.RUNNABLE) {
                 for (j in start until end) {
@@ -68,11 +71,11 @@ class KnapsackGAMasterWorker(override val silent: Boolean = false) : KnapsackGA 
 
     private fun bestOfPopulation(): Individual {
         val best: AtomicReference<Individual> = AtomicReference(population[0])
-        val latch = CountDownLatch(numWorkers)
+        val latch = CountDownLatch(maxThreads)
 
-        for (i in 0 until numWorkers) {
+        for (i in 0 until maxThreads) {
             val start = i * chunksSize
-            val end = if (i == numWorkers - 1) POP_SIZE else (i + 1) * chunksSize
+            val end = if (i == maxThreads - 1) POP_SIZE else (i + 1) * chunksSize
 
             taskQueue.put(Task(TaskType.RUNNABLE) {
                 var localBest = best.get()
@@ -100,11 +103,11 @@ class KnapsackGAMasterWorker(override val silent: Boolean = false) : KnapsackGA 
 
     private fun calculateBestPopulation(best: Individual): Array<Individual> {
         val newPopulation = Array(POP_SIZE) { best }
-        val latch = CountDownLatch(numWorkers)
+        val latch = CountDownLatch(maxThreads)
 
-        for (i in 0 until numWorkers) {
+        for (i in 0 until maxThreads) {
             val start = 1 + i * chunksSize
-            val end = if (i == numWorkers - 1) POP_SIZE else 1 + (i + 1) * chunksSize
+            val end = if (i == maxThreads - 1) POP_SIZE else 1 + (i + 1) * chunksSize
 
             taskQueue.put(Task(TaskType.RUNNABLE) {
                 val r = ThreadLocalRandom.current()
@@ -123,10 +126,10 @@ class KnapsackGAMasterWorker(override val silent: Boolean = false) : KnapsackGA 
     }
 
     private fun mutate(newPopulation: Array<Individual>) {
-        val latch = CountDownLatch(numWorkers)
-        for (i in 0 until numWorkers) {
+        val latch = CountDownLatch(maxThreads)
+        for (i in 0 until maxThreads) {
             val start = 1 + i * chunksSize
-            val end = if (i == numWorkers - 1) POP_SIZE else 1 + (i + 1) * chunksSize
+            val end = if (i == maxThreads - 1) POP_SIZE else 1 + (i + 1) * chunksSize
 
             taskQueue.put(Task(TaskType.RUNNABLE) {
                 val r = ThreadLocalRandom.current()
@@ -144,7 +147,7 @@ class KnapsackGAMasterWorker(override val silent: Boolean = false) : KnapsackGA 
     }
 
     private fun startWorkers() {
-        repeat(numWorkers) {
+        repeat(maxThreads) {
             val worker = Thread(Worker(taskQueue))
             workers.add(worker)
             worker.start()
@@ -152,7 +155,7 @@ class KnapsackGAMasterWorker(override val silent: Boolean = false) : KnapsackGA 
     }
 
     private fun stopWorkers() {
-        repeat(numWorkers) {
+        repeat(maxThreads) {
             taskQueue.put(Task(TaskType.POISON_PILL))
         }
     }
