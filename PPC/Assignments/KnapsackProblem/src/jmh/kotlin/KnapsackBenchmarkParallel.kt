@@ -2,7 +2,6 @@ package benchmark
 
 import knapsack.KnapsackGA
 import knapsack.KnapsackGAForkJoin
-import knapsack.KnapsackGASequential
 import org.openjdk.jmh.annotations.*
 import org.openjdk.jmh.infra.Blackhole
 import java.util.concurrent.TimeUnit
