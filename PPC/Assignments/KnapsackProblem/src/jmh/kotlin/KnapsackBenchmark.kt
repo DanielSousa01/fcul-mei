@@ -41,6 +41,13 @@ open class KnapsackBenchmark {
     }
 
     @Benchmark
+    fun benchmarkKnapsackGA8Threads(bh: Blackhole) {
+        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "8")
+        val result = knapsackGATarget.run()
+        bh.consume(result)
+    }
+
+    @Benchmark
     fun benchmarkKnapsackGA4Threads(bh: Blackhole) {
         System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "4")
         val result = knapsackGATarget.run()
