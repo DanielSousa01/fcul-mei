@@ -28,7 +28,6 @@ class KnapsackGAMasterWorker(
 
     override fun run(): Individual {
         startWorkers()
-        println(maxThreads)
         try {
             for (generation in 0 until N_GENERATIONS) {
                 // Step1 - Calculate Fitness
