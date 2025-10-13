@@ -1,0 +1,6 @@
+\chapter{Conclusions} \label{cap:conclusions}
+
+In this assignment successfully demonstrated the effectiveness of parallel algorithms for the knapsack problem, achieving significant speedups ranging from \textbf{2.6x to 3.9x} compared to sequential implementation. The Master-Worker pattern emerged as the optimal approach (3.93x speedup at 16 threads) due to its efficient thread lifecycle management and task distribution via \texttt{LinkedBlockingQueue} with poison pill termination.
+
+The results confirm that algorithms are well-suited for parallelization, with fitness evaluation being an embarrassingly parallel operation. However, efficiency diminishes with increased thread count (72\% at 4 threads to 25\% at 16 threads) due to hyperthreading effects, synchronization overhead, and memory subsystem limitations beyond 8 physical cores.
+

@@ -1,4 +1,4 @@
-# Assignment #1: Genetic Algorithm for the Knapsack Problem
+# Assignment #1: Algorithm for the Knapsack Problem
 
 ## What were the parallelization strategies used? How did you implement them and why?
 
@@ -26,7 +26,7 @@ The implementation consists of three key components:
 The master maintains a thread-safe `LinkedBlockingQueue<Task>` that serves as the communication channel between the master and workers. Workers are initialized once at the beginning of the algorithm and remain active throughout all generations, continuously processing tasks as they become available.
 
 **Parallelized Operations:**
-This pattern is applied to four critical genetic algorithm operations:
+This pattern is applied to four critical algorithm operations:
 
 1. **Fitness Calculation** (`calculateFitness()`): Each worker evaluates the fitness of individuals in its assigned chunk of the population
 2. **Best Individual Selection** (`bestOfPopulation()`): Workers find the best individual in their chunk using `AtomicReference` with compare-and-swap operations to safely update the global best
@@ -76,7 +76,7 @@ The Fork-Join pattern utilizes Java's Fork-Join framework to recursively divide 
 **Core Architecture:**
 
 - Utilizes `ForkJoinPool(maxThreads)` where `maxThreads` is a configurable parameter (defaulting to `Runtime.getRuntime().availableProcessors()`)
-- Implements `RecursiveAction` for each genetic algorithm operation requiring parallelization
+- Implements `RecursiveAction` for each algorithm operation requiring parallelization
 - Employs a configurable threshold (default 1000) to determine when to stop subdividing tasks
 - Uses `invokeAll()` to fork subtasks and automatically join their results
 
@@ -114,7 +114,7 @@ The parallel implementations demonstrated significant performance improvements c
 
 ### Analysis of Performance Results
 
-The performance results can be explained by several key factors related to the nature of the genetic algorithm and the characteristics of each parallelization strategy:
+The performance results can be explained by several key factors related to the nature of the algorithm and the characteristics of each parallelization strategy:
 
 #### Why Master-Worker Performed Best
 
@@ -122,14 +122,14 @@ The performance results can be explained by several key factors related to the n
 2. **LinkedBlockingQueue Efficiency**: The thread-safe `LinkedBlockingQueue<Task>` provides optimal load balancing - workers continuously poll without spinning, and blocking ensures immediate task pickup
 3. **Poison Pill Termination**: The elegant `TaskType.POISON_PILL` shutdown mechanism in `stopWorkers()` minimizes synchronization complexity compared to other termination strategies
 4. **Chunked Population Processing**: Population division based on `POP_SIZE / maxThreads` ensures consistent memory regions per worker, improving cache locality
-5. **CountDownLatch Synchronization**: Each operation uses precise synchronization barriers without unnecessary thread blocking between genetic algorithm steps
+5. **CountDownLatch Synchronization**: Each operation uses precise synchronization barriers without unnecessary thread blocking between algorithm steps
 
 #### Fork-Join Threshold Analysis
 
 The threshold parameter significantly impacts performance across different configurations:
 
 1. **1k Threshold Advantages**:
-   - Optimal task granularity for genetic algorithm computational intensity
+   - Optimal task granularity for algorithm computational intensity
    - Sufficient parallel tasks without excessive `RecursiveAction` creation overhead  
    - Effective work-stealing due to balanced task completion times
    - Better utilization at high thread counts (16 threads)
@@ -145,7 +145,7 @@ The threshold parameter significantly impacts performance across different confi
 
 1. **Configurable Thread Pool**: `Executors.newFixedThreadPool(maxThreads)` where `maxThreads` is a configurable parameter (defaulting to `Runtime.getRuntime().availableProcessors()`) created once per execution minimizes thread management overhead across generations
 2. **Future-Based Coordination**: The `futures.forEach { it.get() }` pattern creates efficient synchronization barriers but requires all threads to complete before proceeding
-3. **Static Chunk Distribution**: Equal work distribution (`chunkSize = total operations / maxThreads`) works well for uniform genetic algorithm workloads
+3. **Static Chunk Distribution**: Equal work distribution (`chunkSize = total operations / maxThreads`) works well for uniform algorithm workloads
 
 #### Efficiency Diminishing Returns Explained
 
@@ -159,9 +159,9 @@ The efficiency pattern follows fundamental parallel computing limitations:
    - Potential false sharing in population data structures
 4. **Hardware Architecture Limits**: Beyond 8 threads, hyperthreading effects significantly reduce per-thread effectiveness since the experimental setup uses a machine with 8 physical cores and 16 logical processors (hyperthreading enabled). Threads 9-16 share execution units, caches, and pipeline resources with threads 1-8, leading to resource contention rather than true parallelism
 
-#### Genetic Algorithm Parallelization Suitability
+#### Algorithm Parallelization Suitability
 
-The excellent speedups result from the genetic algorithm's inherently parallel nature:
+The excellent speedups result from the algorithm's inherently parallel nature:
 
 1. **Embarrassingly Parallel Operations**:
    - `calculateFitness()`: Independent fitness evaluation per individual
@@ -193,7 +193,7 @@ The following graphs illustrate the performance analysis results:
 
 ## What was your experimental setup? Include all relevant details
 
-The experimental setup for evaluating the performance of the genetic algorithm implementations involved the following key components:
+The experimental setup for evaluating the performance of the algorithm implementations involved the following key components:
 
 - **Hardware**: The machine used for testing is equipped with an AMD Ryzen 7 processor featuring 8 physical cores and 16 logical processors (hyperthreading enabled), along with 16GB of RAM. This configuration allows for testing various thread counts up to 16.
 - **Operating System**: The experiments were conducted on a 64-bit version of Windows 11.
@@ -209,6 +209,6 @@ The experimental setup for evaluating the performance of the genetic algorithm i
 
 This assignment successfully demonstrated the effectiveness of parallel algorithms for the knapsack problem, achieving significant speedups ranging from **2.6x to 3.9x** compared to sequential implementation. The Master-Worker pattern emerged as the optimal approach (3.93x speedup at 16 threads) due to its efficient thread lifecycle management and task distribution via `LinkedBlockingQueue` with poison pill termination.
 
-The results confirm that genetic algorithms are exceptionally well-suited for parallelization, with fitness evaluation being an embarrassingly parallel operation. However, efficiency diminishes with increased thread count (72% at 4 threads to 25% at 16 threads) due to hyperthreading effects, synchronization overhead, and memory subsystem limitations beyond 8 physical cores.
+The results confirm that algorithms are exceptionally well-suited for parallelization, with fitness evaluation being an embarrassingly parallel operation. However, efficiency diminishes with increased thread count (72% at 4 threads to 25% at 16 threads) due to hyperthreading effects, synchronization overhead, and memory subsystem limitations beyond 8 physical cores.
 
 The comprehensive JMH benchmarking and configurable `maxThreads` parameter ensure reliable, reproducible results adaptable to different hardware configurations, providing a solid foundation for tackling computationally intensive optimization problems in production environments.
