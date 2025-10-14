@@ -9,126 +9,206 @@ In this assignment, three distinct parallelization strategies were implemented:
     \item \textbf{Fork-Join Pattern}
 \end{enumerate}
 
-All these strategies apply parallelization to each generation step of the algorithm, specifically targeting the methods that evaluate the fitness of individuals in the population. This focus is strategic since fitness evaluation is the most computationally intensive task and benefits significantly from parallel execution.
+All these strategies apply parallelization to each generation step of the
+algorithm, specifically targeting the methods that evaluate the fitness of
+individuals in the population. This focus is strategic since fitness evaluation
+is the most computationally intensive task and benefits significantly from
+parallel execution.
 
 \section{Master-Worker Pattern with Poison Pill} \label{sec:master-worker}
 
-The Master-Worker uses a master thread to be responsible for distributing tasks to multiple worker threads. This implementation creates a thread pool with a configurable number of workers (\texttt{maxThreads} parameter, defaulting to \texttt{Runtime.getRuntime().availableProcessors()}). The master divides the population into equal chunks based on a calculated chunk size (\texttt{POP\_SIZE / maxThreads}), ensuring balanced workload distribution among workers.
-\\
+The Master-Worker uses a master thread to be responsible for distributing tasks
+to multiple worker threads. This implementation creates a thread pool with a
+configurable number of workers (\texttt{maxThreads} parameter, defaulting to
+\texttt{Runtime.getRuntime().availableProcessors()}). The master divides the
+population into equal chunks based on a calculated chunk size (\texttt{POP\_SIZE
+/ maxThreads}), ensuring balanced workload distribution among workers. \\
 \\
 The implementation consists of three key components:
 
 \subsection{Core Classes}
 
 \begin{itemize}
-    \item \texttt{Worker} class that implements \texttt{Runnable} - represents a worker thread that continuously polls the task queue for work
-    \item \texttt{Task} class - encapsulates the work to be performed, containing a \texttt{TaskType} and a \texttt{Runnable} with the actual logic
-    \item \texttt{TaskType} enum - distinguishes between regular tasks (\texttt{RUNNABLE}) and termination signals (\texttt{POISON\_PILL})
+    \item \texttt{Worker} class that implements \texttt{Runnable} - represents a
+    worker thread that continuously polls the task queue for work
+    \item \texttt{Task} class - encapsulates the work to be performed,
+    containing a \texttt{TaskType} and a \texttt{Runnable} with the actual logic
+    \item \texttt{TaskType} enum - distinguishes between regular tasks
+    (\texttt{RUNNABLE}) and termination signals (\texttt{POISON\_PILL})
 \end{itemize}
 
 \subsection{Architecture}
-The master maintains a thread-safe \texttt{LinkedBlockingQueue<Task>} that serves as the communication channel between the master and workers. Workers are initialized once at the beginning of the algorithm and remain active throughout all generations, continuously processing tasks as they become available.
+The master maintains a thread-safe \texttt{LinkedBlockingQueue<Task>} that
+serves as the communication channel between the master and workers. Workers are
+initialized once at the beginning of the algorithm and remain active throughout
+all generations, continuously processing tasks as they become available.
 
 \subsection{Parallelized Operations}
 This pattern is applied to four critical algorithm operations:
 
 \begin{enumerate}
-    \item \textbf{Fitness Calculation} (\texttt{calculateFitness()}): Each worker evaluates the fitness of individuals in its assigned chunk of the population
-    \item \textbf{Best Individual Selection} (\texttt{bestOfPopulation()}): Workers find the best individual in their chunk using \texttt{AtomicReference} with compare-and-swap operations to safely update the global best
-    \item \textbf{Population Reproduction} (\texttt{calculateBestPopulation()}): Workers perform tournament selection and crossover operations to generate new individuals
-    \item \textbf{Mutation} (\texttt{mutate()}): Workers apply mutation to individuals in their assigned range based on the mutation probability
+    \item \textbf{Fitness Calculation} (\texttt{calculateFitness()}): Each
+    worker evaluates the fitness of individuals in its assigned chunk of the
+    population
+    \item \textbf{Best Individual Selection} (\texttt{bestOfPopulation()}):
+    Workers find the best individual in their chunk using
+    \texttt{AtomicReference} with compare-and-swap operations to safely update
+    the global best
+    \item \textbf{Population Reproduction} (\texttt{calculateBestPopulation()}):
+    Workers perform tournament selection and crossover operations to generate
+    new individuals
+    \item \textbf{Mutation} (\texttt{mutate()}): Workers apply mutation to
+    individuals in their assigned range based on the mutation probability
 \end{enumerate}
 
 \subsection{Synchronization}
-Each parallelized step utilizes a \texttt{CountDownLatch} initialized with the number of workers. As each worker completes its assigned chunk of work, it calls \texttt{countDown()}, while the master waits using \texttt{await()} before proceeding to the next step. This mechanism ensures proper synchronization between generations.
+Each parallelized step utilizes a \texttt{CountDownLatch} initialized with the
+number of workers. As each worker completes its assigned chunk of work, it calls
+\texttt{countDown()}, while the master waits using \texttt{await()} before
+proceeding to the next step. This mechanism ensures proper synchronization
+between generations.
 
 \subsection{Lifecycle Management}
-Workers are initialized once at the beginning (\texttt{startWorkers()}) and terminated at the end by enqueueing a poison pill for each worker (\texttt{stopWorkers()}). This approach minimizes thread creation overhead and maintains consistent performance across generations.
+Workers are initialized once at the beginning (\texttt{startWorkers()}) and
+terminated at the end by enqueueing a poison pill for each worker
+(\texttt{stopWorkers()}). This approach minimizes thread creation overhead and
+maintains consistent performance across generations.
 
 \newpage
 
 \section{Scatter-Gather Pattern}\label{sec:scatter-gather}
 
-The Scatter-Gather pattern divides the population into smaller chunks (scattered) across multiple threads for parallel processing, then collects the results (gathered) after completion. This implementation utilizes Java's \texttt{ExecutorService} with a fixed thread pool to manage parallel execution efficiently.
+The Scatter-Gather pattern divides the population into smaller chunks
+(scattered) across multiple threads for parallel processing, then collects the
+results (gathered) after completion. This implementation utilizes Java's
+\texttt{ExecutorService} with a fixed thread pool to manage parallel execution
+efficiently.
 
 \subsection{Core Architecture}
 
 \begin{itemize}
-    \item Uses \texttt{Executors.newFixedThreadPool(maxThreads)} where \texttt{maxThreads} is a configurable parameter (defaulting to \texttt{Runtime.getRuntime().availableProcessors()})
-    \item Employs a centralized \texttt{computeFutures()} method that handles the scatter-gather logic for all parallelized operations
-    \item Creates \texttt{Future} objects to track and synchronize the completion of parallel tasks
+    \item Uses \texttt{Executors.newFixedThreadPool(maxThreads)} where
+    \texttt{maxThreads} is a configurable parameter (defaulting to
+    \texttt{Runtime.getRuntime().availableProcessors()})
+    \item Employs a centralized \texttt{computeFutures()} method that handles
+    the scatter-gather logic for all parallelized operations
+    \item Creates \texttt{Future} objects to track and synchronize the
+    completion of parallel tasks
 \end{itemize}
 
 \subsection{Scatter Phase}
-The \texttt{computeFutures()} method divides the work range into equal chunks based on \texttt{chunkSize = total operations / maxThreads}. Each thread receives a specific range to process:
+The \texttt{computeFutures()} method divides the work range into equal chunks
+based on \texttt{chunkSize = total operations / maxThreads}. Each thread
+receives a specific range to process:
 
 \begin{itemize}
     \item Thread 0: processes indices \texttt{[start, start + chunkSize)}
-    \item Thread 1: processes indices \texttt{[start + chunkSize, start + 2 * chunkSize)}
-    \item Last thread: processes remaining indices to handle any remainder from integer division
+    \item Thread 1: processes indices \texttt{[start + chunkSize, start + 2 *
+    chunkSize)}
+    \item Last thread: processes remaining indices to handle any remainder from
+    integer division
 \end{itemize}
 
 \subsection{Gather Phase}
 
-After submitting all tasks to the thread pool, the method calls \texttt{futures.forEach \{ it.get() \}} to wait for all threads to complete their work before proceeding. This ensures synchronization between parallel operations.
+After submitting all tasks to the thread pool, the method calls
+\texttt{futures.forEach \{ it.get() \}} to wait for all threads to complete
+their work before proceeding. This ensures synchronization between parallel
+operations.
 
 \subsection{Parallelized Operations}\label{sec:scatter-gather-operations}
 
 \begin{enumerate}
-    \item \textbf{Fitness Calculation} (\texttt{calculateFitness()}): Each thread evaluates fitness for individuals in its assigned range
-    \item \textbf{Best Individual Selection} (\texttt{bestOfPopulation()}): Threads find local best individuals and use \texttt{AtomicReference} with compare-and-swap to update the global best
-    \item \textbf{Population Reproduction} (\texttt{calculateBestPopulation()}): Each thread performs tournament selection and crossover for its assigned range
-    \item \textbf{Mutation} (\texttt{mutate()}): Threads apply mutation to individuals in their assigned range based on mutation probability
+    \item \textbf{Fitness Calculation} (\texttt{calculateFitness()}): Each
+    thread evaluates fitness for individuals in its assigned range
+    \item \textbf{Best Individual Selection} (\texttt{bestOfPopulation()}):
+    Threads find local best individuals and use \texttt{AtomicReference} with
+    compare-and-swap to update the global best
+    \item \textbf{Population Reproduction} (\texttt{calculateBestPopulation()}):
+    Each thread performs tournament selection and crossover for its assigned
+    range
+    \item \textbf{Mutation} (\texttt{mutate()}): Threads apply mutation to
+    individuals in their assigned range based on mutation probability
 \end{enumerate}
 
 \subsection{Thread Management}
-The thread pool is created once per algorithm execution and reused across all generations, minimizing thread creation overhead. The pool is properly shut down in a \texttt{finally} block to ensure resource cleanup.
+The thread pool is created once per algorithm execution and reused across all
+generations, minimizing thread creation overhead. The pool is properly shut down
+in a \texttt{finally} block to ensure resource cleanup.
 
 \section{Fork-Join Pattern}
 
-The Fork-Join pattern utilizes Java's Fork-Join framework to recursively divide tasks into smaller subtasks until they reach a manageable size (threshold), then processes them in parallel and combines the results. This implementation leverages \texttt{ForkJoinPool} and \texttt{RecursiveAction} to achieve work-stealing parallelism.
+The Fork-Join pattern utilizes Java's Fork-Join framework to recursively divide
+tasks into smaller subtasks until they reach a manageable size (threshold), then
+processes them in parallel and combines the results. This implementation
+leverages \texttt{ForkJoinPool} and \texttt{RecursiveAction} to achieve
+work-stealing parallelism.
 
 \subsection{Core Architecture}
 
 \begin{itemize}
-    \item Utilizes \texttt{ForkJoinPool(maxThreads)} where \texttt{maxThreads} is a configurable parameter (defaulting to \texttt{Runtime.getRuntime().availableProcessors()})
-    \item Implements \texttt{RecursiveAction} for each algorithm operation requiring parallelization
-    \item Employs a configurable threshold (default 1000) to determine when to stop subdividing tasks
-    \item Uses \texttt{invokeAll()} to fork subtasks and automatically join their results
+    \item Utilizes \texttt{ForkJoinPool(maxThreads)} where \texttt{maxThreads}
+    is a configurable parameter (defaulting to
+    \texttt{Runtime.getRuntime().availableProcessors()})
+    \item Implements \texttt{RecursiveAction} for each algorithm operation
+    requiring parallelization
+    \item Employs a configurable threshold (default 1000) to determine when to
+    stop subdividing tasks
+    \item Uses \texttt{invokeAll()} to fork subtasks and automatically join
+    their results
 \end{itemize}
 
 \subsection{Fork Phase (Task Subdivision)}
 The \texttt{computeRange()} method implements the recursive subdivision logic:
 
 \begin{itemize}
-    \item If the work range \texttt{(end - start)} is smaller than or equal to the threshold, executes the task directly
-    \item Otherwise, splits the range in half at the midpoint: \texttt{mid = (start + end) / 2}
-    \item Creates two \texttt{RecursiveAction} subtasks: left half \texttt{[start, mid)} and right half \texttt{[mid, end)}
-    \item Uses \texttt{invokeAll(left, right)} to fork both subtasks for parallel execution
+    \item If the work range \texttt{(end - start)} is smaller than or equal to
+    the threshold, executes the task directly
+    \item Otherwise, splits the range in half at the midpoint: \texttt{mid =
+    (start + end) / 2}
+    \item Creates two \texttt{RecursiveAction} subtasks: left half
+    \texttt{[start, mid)} and right half \texttt{[mid, end)}
+    \item Uses \texttt{invokeAll(left, right)} to fork both subtasks for
+    parallel execution
 \end{itemize}
 
 \newpage
 
 \subsection{Join Phase (Result Combination)}
-The Fork-Join framework automatically handles the join phase through the \texttt{invokeAll()} method, which:
+The Fork-Join framework automatically handles the join phase through the
+\texttt{invokeAll()} method, which:
 
 \begin{itemize}
     \item Executes subtasks in parallel using available worker threads
-    \item Implements work-stealing where idle threads can steal work from busy threads' queues
-    \item Waits for all subtasks to complete before returning control to the caller
+    \item Implements work-stealing where idle threads can steal work from busy
+    threads' queues
+    \item Waits for all subtasks to complete before returning control to the
+    caller
 \end{itemize}
 
 \subsection{Parallelized Operations}
 
 \begin{enumerate}
-    \item \textbf{Fitness Calculation} (\texttt{calculateFitness()}): Recursively divides the population range and evaluates fitness for individuals in parallel
-    \item \textbf{Best Individual Selection} (\texttt{bestOfPopulation()}): Finds local best individuals in parallel chunks and uses \texttt{AtomicReference} with compare-and-swap to update the global best
-    \item \textbf{Population Reproduction} (\texttt{calculateBestPopulation()}): Performs tournament selection and crossover operations in parallel across population segments
-    \item \textbf{Mutation} (\texttt{mutate()}): Applies mutation to individuals in parallel based on the mutation probability
+    \item \textbf{Fitness Calculation} (\texttt{calculateFitness()}):
+    Recursively divides the population range and evaluates fitness for
+    individuals in parallel
+    \item \textbf{Best Individual Selection} (\texttt{bestOfPopulation()}):
+    Finds local best individuals in parallel chunks and uses
+    \texttt{AtomicReference} with compare-and-swap to update the global best
+    \item \textbf{Population Reproduction} (\texttt{calculateBestPopulation()}):
+    Performs tournament selection and crossover operations in parallel across
+    population segments
+    \item \textbf{Mutation} (\texttt{mutate()}): Applies mutation to individuals
+    in parallel based on the mutation probability
 \end{enumerate}
 
 \subsection{Work-Stealing Benefits}
-The Fork-Join framework provides automatic load balancing through work-stealing, where threads that complete their work early can steal tasks from other threads' work queues, maximizing CPU utilization and minimizing idle time.
+The Fork-Join framework provides automatic load balancing through work-stealing,
+where threads that complete their work early can steal tasks from other threads'
+work queues, maximizing CPU utilization and minimizing idle time.
 
 \subsection{Threshold Optimization}
-The configurable threshold parameter allows fine-tuning the granularity of parallelization - smaller thresholds create more parallelism but increase overhead, while larger thresholds reduce overhead but may limit parallelization opportunities.
+The configurable threshold parameter allows fine-tuning the granularity of
+parallelization - smaller thresholds create more parallelism but increase
+overhead, while larger thresholds reduce overhead but may limit parallelization
+opportunities.
