@@ -8,14 +8,14 @@ the following figures.
 \begin{figure}[htbp]
    \centering
     \includegraphics[width=\textwidth]{images/speedup_analysis.png}
-    \caption{Speedup comparison across different parallel implementations}
+    \caption{Speedup across different parallel implementations}
     \label{fig:speedup}
 \end{figure}
 
 \begin{figure}[htbp]
    \centering
    \includegraphics[width=\textwidth]{images/performance_comparison.png}
-   \caption{Comprehensive performance comparison of all implementations}
+   \caption{Performance comparison of all implementations}
    \label{fig:performance}
 \end{figure}
 
@@ -100,11 +100,18 @@ configurations:
 \begin{figure}[htbp]
    \centering
    \includegraphics[width=0.7\textwidth]{images/efficiency_analysis.png}
-   \caption{Efficiency analysis for various thread counts}
+   \caption{Efficiency analysis for multiple thread counts}
    \label{fig:efficiency}
 \end{figure}
 
-The efficiency follows fundamental parallel computing limitations:
+The efficiency results presented in Figure~\ref{fig:efficiency} indicate how well
+each parallel implementation utilizes the available threads. Efficiency is defined
+as the ratio of the actual speedup achieved to the number of threads used
+(Speedup $\div$ Number of Threads), expressed as a percentage.
+All implementations show a decline in efficiency as the number of threads
+increases, which is expected due to the overheads associated with parallelism.
+
+Some of the key factors that affect efficiency include:
 
 \begin{enumerate}
    \item \textbf{Amdahl's Law}: Sequential algorithm portions (initialization,
