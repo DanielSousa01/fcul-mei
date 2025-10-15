@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
-package com.example.marsphotos.ui
+package fcul.marsphotos.ui
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -16,9 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.marsphotos.R
-import com.example.marsphotos.ui.screens.HomeScreen
-import com.example.marsphotos.ui.screens.viewmodels.PhotosViewModel
+import fcul.marsphotos.R
+import fcul.marsphotos.ui.screens.HomeScreen
+import fcul.marsphotos.ui.screens.viewmodels.PhotosViewModel
 
 @Composable
 fun PhotosApp() {

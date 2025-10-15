@@ -23,11 +23,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.marsphotos"
+    namespace = "fcul.marsphotos"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.marsphotos"
+        applicationId = "fcul.marsphotos"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
@@ -83,9 +83,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("androidx.compose.ui:ui-graphics:1.9.3")
+    implementation("com.google.firebase:firebase-database:22.0.1")
 
-    implementation(platform("com.google.firebase:firebase-bom:34.4.0"))
-    implementation("com.google.firebase:firebase-auth")
 
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     debugImplementation("androidx.compose.ui:ui-tooling")

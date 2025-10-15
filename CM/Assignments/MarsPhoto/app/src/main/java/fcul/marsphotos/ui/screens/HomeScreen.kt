@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.marsphotos.ui.screens
+package fcul.marsphotos.ui.screens
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,7 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.marsphotos.ui.screens.viewmodels.PhotosUiState
+import fcul.marsphotos.ui.screens.viewmodels.PhotosUiState
 
 @Composable
 fun HomeScreen(
@@ -34,10 +34,17 @@ fun HomeScreen(
         is PhotosUiState.Loading -> LoadingScreen(modifier = modifier.fillMaxWidth())
         is PhotosUiState.Success ->
             ResultScreen(
+                totalRolls = photosUiState.totalRolls,
                 marsPhotos = photosUiState.marsPhotos,
-                marsPhoto = photosUiState.marsPhoto,
+                marsPhotoUri = photosUiState.marsPhotoUri,
                 randomPhotos = photosUiState.randomPhotos,
-                randomPhoto = photosUiState.randomPhoto,
+                randomPhotoUri = photosUiState.randomPhotoUri,
+                showSaveDialog = photosUiState.showSaveDialog,
+                dismissDialog = photosUiState.dismissDialog,
+                savePhotos = photosUiState.savePhotos,
+                loadPhotos = photosUiState.LoadPhotos,
+                toggleBlur = photosUiState.toggleBlur,
+                toggleGrayScale = photosUiState.toggleGrayScale,
                 randomize = photosUiState.randomize,
                 modifier = modifier
                     .fillMaxWidth()

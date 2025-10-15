@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.marsphotos.ui.theme
+package fcul.marsphotos.ui.theme
 
 import android.app.Activity
 import android.os.Build
@@ -30,6 +30,13 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.example.marsPhotos.ui.theme.Pink40
+import com.example.marsPhotos.ui.theme.Pink80
+import com.example.marsPhotos.ui.theme.Purple40
+import com.example.marsPhotos.ui.theme.Purple80
+import com.example.marsPhotos.ui.theme.PurpleGrey40
+import com.example.marsPhotos.ui.theme.PurpleGrey80
+import com.example.marsPhotos.ui.theme.Shapes
 
 private val DarkColorScheme =
     darkColorScheme(

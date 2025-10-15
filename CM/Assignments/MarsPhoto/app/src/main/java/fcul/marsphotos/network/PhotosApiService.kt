@@ -1,4 +1,4 @@
-package com.example.marsphotos.network
+package fcul.marsphotos.network
 
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json

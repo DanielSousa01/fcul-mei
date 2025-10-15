@@ -1,4 +1,4 @@
-package com.example.marsphotos.ui.screens
+package fcul.marsphotos.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
@@ -8,8 +8,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.marsphotos.R
-import com.example.marsphotos.ui.theme.MarsPhotosTheme
+import fcul.marsphotos.R
+import fcul.marsphotos.ui.theme.MarsPhotosTheme
 
 @Composable
 fun LoadingScreen(modifier: Modifier = Modifier) {
