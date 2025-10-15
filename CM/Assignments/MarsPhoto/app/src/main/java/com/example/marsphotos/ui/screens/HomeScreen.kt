@@ -34,10 +34,17 @@ fun HomeScreen(
         is PhotosUiState.Loading -> LoadingScreen(modifier = modifier.fillMaxWidth())
         is PhotosUiState.Success ->
             ResultScreen(
+                totalRolls = photosUiState.totalRolls,
                 marsPhotos = photosUiState.marsPhotos,
-                marsPhoto = photosUiState.marsPhoto,
+                marsPhotoUri = photosUiState.marsPhotoUri,
                 randomPhotos = photosUiState.randomPhotos,
-                randomPhoto = photosUiState.randomPhoto,
+                randomPhotoUri = photosUiState.randomPhotoUri,
+                showSaveDialog = photosUiState.showSaveDialog,
+                dismissDialog = photosUiState.dismissDialog,
+                savePhotos = photosUiState.savePhotos,
+                loadPhotos = photosUiState.LoadPhotos,
+                toggleBlur = photosUiState.toggleBlur,
+                toggleGrayScale = photosUiState.toggleGrayScale,
                 randomize = photosUiState.randomize,
                 modifier = modifier
                     .fillMaxWidth()

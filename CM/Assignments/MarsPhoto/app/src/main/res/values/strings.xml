@@ -21,6 +21,12 @@
     <string name="loading">Loading</string>
     <string name="photos_api">Photos API</string>
     <string name="roll">Roll</string>
+    <string name="rolls">Rolls: %d</string>
     <string name="blur">Blur</string>
     <string name="gray_scale">Gray Scale</string>
+    <string name="save">Save</string>
+    <string name="load">Load</string>
+    <string name="ok">Ok</string>
+    <string name="success">Success</string>
+    <string name="success_save_text">Photos saved successfully!</string>
 </resources>
