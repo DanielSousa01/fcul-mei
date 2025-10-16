@@ -60,6 +60,10 @@ class FirebaseService {
         }
     }
 
+    fun setRolls(rolls: Int) {
+        databaseRollsReference.setValue(rolls)
+    }
+
     fun incrementRolls() {
         databaseRollsReference.get().addOnSuccessListener {
             val currentRolls = it.getValue(Int::class.java) ?: 0

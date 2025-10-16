@@ -148,6 +148,8 @@ class PhotosViewModel : ViewModel() {
                 if (lastPhotoPair != null) {
                     randomPhoto = lastPhotoPair.randomPhotoUri
                     marsPhoto = lastPhotoPair.marsPhotoUri
+                    rollsCounter = 0
+                    firebaseService.setRolls(rollsCounter)
                     updateUiState()
                 }
             } catch (e: IOException) {
