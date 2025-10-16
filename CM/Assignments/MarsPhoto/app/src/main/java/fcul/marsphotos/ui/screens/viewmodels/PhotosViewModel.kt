@@ -148,8 +148,8 @@ class PhotosViewModel : ViewModel() {
                 if (lastPhotoPair != null) {
                     randomPhoto = lastPhotoPair.randomPhotoUri
                     marsPhoto = lastPhotoPair.marsPhotoUri
+                    updateUiState()
                 }
-                updateUiState()
             } catch (e: IOException) {
                 Log.e("PhotosViewModel", "Failure: ${e.message}")
             }
