@@ -1,5 +1,6 @@
 package fcul.marsphotos.ui.screens.viewmodels
 
+import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,6 +31,8 @@ class PhotosViewModel : ViewModel() {
     private lateinit var randomPhotos: List<RandomPhoto>
     private lateinit var randomPhoto: String
 
+    private var photo: String? = null
+
     private val firebaseService = FirebaseService()
 
     init {
@@ -44,13 +47,33 @@ class PhotosViewModel : ViewModel() {
 
             randomPhoto = randomPhotos.random().imgSrc
             marsPhoto = marsPhotos.random().imgSrc
+            photo = firebaseService.getPhotoUri()
 
             updateUiState()
         }
     }
 
+    fun uploadPhoto(photoUri: Uri, onComplete: () -> Unit, onFailure: () -> Unit) {
+        firebaseService.uploadPhoto(
+            photoUri,
+            {
+                viewModelScope.launch {
+                    try {
+                        photo = firebaseService.getPhotoUri()
+                        updateUiState()
+                    } catch (e: IOException) {
+                        Log.e("PhotosViewModel", "Failure: ${e.message}")
+                    } finally {
+                        onComplete()
+                    }
+                }
+            }, onFailure
+        )
+    }
+
     private fun updateUiState() {
         try {
+            Log.d("PhotosViewModel", "Photo URI: $photo")
             photosUiState =
                 if (this::marsPhotos.isInitialized && this::randomPhotos.isInitialized) {
                     PhotosUiState.Success(
@@ -59,6 +82,7 @@ class PhotosViewModel : ViewModel() {
                         marsPhotoUri = marsPhoto,
                         randomPhotos = "Success: ${randomPhotos.size} Random photos retrieved",
                         randomPhotoUri = randomPhoto,
+                        photoUri = photo,
                         showSaveDialog = showSaveDialog,
                         dismissDialog = { dismissDialog() },
                         savePhotos = { savePhotos() },
@@ -148,8 +172,6 @@ class PhotosViewModel : ViewModel() {
                 if (lastPhotoPair != null) {
                     randomPhoto = lastPhotoPair.randomPhotoUri
                     marsPhoto = lastPhotoPair.marsPhotoUri
-                    rollsCounter = 0
-                    firebaseService.setRolls(rollsCounter)
                     updateUiState()
                 }
             } catch (e: IOException) {

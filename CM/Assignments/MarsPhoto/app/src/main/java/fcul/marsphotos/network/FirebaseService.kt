@@ -1,12 +1,18 @@
 package fcul.marsphotos.network
 
+import android.net.Uri
 import android.util.Log
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.storage.FirebaseStorage
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
+import kotlin.toString
 
 class FirebaseService {
+
+    private val firebaseStorage = FirebaseStorage.getInstance()
+    private val photosReference = firebaseStorage.reference.child("photos")
     private val firebaseDatabase = FirebaseDatabase.getInstance()
     private val databasePhotosReference = firebaseDatabase.reference.child("photos")
     private val databaseRollsReference = firebaseDatabase.reference.child("rolls")
@@ -60,14 +66,33 @@ class FirebaseService {
         }
     }
 
-    fun setRolls(rolls: Int) {
-        databaseRollsReference.setValue(rolls)
-    }
-
     fun incrementRolls() {
         databaseRollsReference.get().addOnSuccessListener {
             val currentRolls = it.getValue(Int::class.java) ?: 0
             databaseRollsReference.setValue(currentRolls + 1)
+        }
+    }
+
+    fun uploadPhoto(fileUri: Uri, onComplete: () -> Unit, onFailure: () -> Unit) {
+        val photoRef = photosReference.child("photos")
+        photoRef.putFile(fileUri)
+            .addOnSuccessListener {
+                onComplete()
+            }.addOnFailureListener {
+                onFailure()
+            }
+    }
+
+    suspend fun getPhotoUri(): String? {
+        return suspendCoroutine { continuation ->
+            photosReference.child("photos").downloadUrl
+                .addOnSuccessListener { uri ->
+                    continuation.resume(uri.toString())
+                }
+                .addOnFailureListener { e ->
+                    Log.d("FirebaseService", "Foto não encontrada ou erro ao obter uri: ${e.message}")
+                    continuation.resume(null)
+                }
         }
     }
 }

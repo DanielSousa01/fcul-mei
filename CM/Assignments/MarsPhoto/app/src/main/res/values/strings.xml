@@ -29,4 +29,10 @@
     <string name="ok">Ok</string>
     <string name="success">Success</string>
     <string name="success_save_text">Photos saved successfully!</string>
+    <string name="back">Back</string>
+    <string name="take_photo">Take Photo</string>
+    <string name="photo_upload_success">Photo uploaded successfully!</string>
+    <string name="failure">Failure</string>
+    <string name="failure_save_photo">Failed to save photo.</string>
+    <string name="uploaded_photo">Uploaded Photo</string>
 </resources>

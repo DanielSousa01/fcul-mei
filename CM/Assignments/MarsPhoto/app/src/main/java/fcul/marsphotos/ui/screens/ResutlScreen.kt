@@ -14,17 +14,20 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import fcul.marsphotos.R
 
 @Composable
 fun ResultScreen(
+    navController: NavHostController,
     totalRolls: Int,
     marsPhotos: String,
     marsPhotoUri: String,
     randomPhotos: String,
     randomPhotoUri: String,
+    photoUri: String? = null,
     showSaveDialog: Boolean = false,
     dismissDialog: () -> Unit,
     savePhotos: () -> Unit,
@@ -57,6 +60,14 @@ fun ResultScreen(
                 .fillMaxWidth()
                 .weight(1f)
 
+        if (photoUri != null) {
+            ImagePlaceholder(
+                stringResource(R.string.uploaded_photo),
+                photoUri,
+                imagesModifier,
+            )
+        }
+
         ImagePlaceholder(
             randomPhotos,
             randomPhotoUri,
@@ -69,6 +80,7 @@ fun ResultScreen(
         )
         Text(text = stringResource(R.string.rolls, totalRolls))
         OptionMenu(
+            navController,
             {
                 savePhotos()
             },
@@ -102,6 +114,7 @@ fun ImagePlaceholder(
 
 @Composable
 fun OptionMenu(
+    navController: NavHostController,
     savePhotos: () -> Unit,
     loadPhotos: () -> Unit,
     randomize: () -> Unit,
@@ -135,6 +148,9 @@ fun OptionMenu(
 
         Button(onClick = loadPhotos) {
             Text(text = stringResource(R.string.load))
+        }
+        Button(onClick = { navController.navigate(Screens.CameraScreen.route) }) {
+            Text(text = stringResource(R.string.take_photo))
         }
     }
 

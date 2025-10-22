@@ -22,10 +22,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import fcul.marsphotos.ui.screens.viewmodels.PhotosUiState
 
 @Composable
 fun HomeScreen(
+    navController: NavHostController,
     photosUiState: PhotosUiState,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -34,11 +36,13 @@ fun HomeScreen(
         is PhotosUiState.Loading -> LoadingScreen(modifier = modifier.fillMaxWidth())
         is PhotosUiState.Success ->
             ResultScreen(
+                navController = navController,
                 totalRolls = photosUiState.totalRolls,
                 marsPhotos = photosUiState.marsPhotos,
                 marsPhotoUri = photosUiState.marsPhotoUri,
                 randomPhotos = photosUiState.randomPhotos,
                 randomPhotoUri = photosUiState.randomPhotoUri,
+                photoUri = photosUiState.photoUri,
                 showSaveDialog = photosUiState.showSaveDialog,
                 dismissDialog = photosUiState.dismissDialog,
                 savePhotos = photosUiState.savePhotos,

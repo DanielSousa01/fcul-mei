@@ -16,7 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.rememberNavController
 import fcul.marsphotos.R
+import fcul.marsphotos.navigation.NavGraph
 import fcul.marsphotos.ui.screens.HomeScreen
 import fcul.marsphotos.ui.screens.viewmodels.PhotosViewModel
 
@@ -31,8 +33,10 @@ fun PhotosApp() {
         Surface(
             modifier = Modifier.fillMaxSize(),
         ) {
-            HomeScreen(
-                photosUiState = photosViewModel.photosUiState,
+            val navController = rememberNavController()
+            NavGraph(
+                navController = navController,
+                photosViewModel = photosViewModel,
                 contentPadding = it,
             )
         }
