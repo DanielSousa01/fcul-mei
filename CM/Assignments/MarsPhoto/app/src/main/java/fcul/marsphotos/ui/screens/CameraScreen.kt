@@ -123,9 +123,11 @@ fun CameraScreen(
         .fillMaxSize()
         .padding(16.dp)
     ) {
-        AndroidView(factory = { previewView }, modifier = Modifier
-            .weight(1f)
-            .fillMaxSize())
+        if (!isLoading) {
+            AndroidView(factory = { previewView }, modifier = Modifier
+                .weight(1f)
+                .fillMaxSize())
+        }
 
         Row (
             modifier = Modifier.fillMaxWidth(),
@@ -171,7 +173,6 @@ fun CameraScreen(
                 CircularProgressIndicator()
             }
         }
-
     }
 }
 
