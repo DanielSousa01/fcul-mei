@@ -1,3 +1,6 @@
+package benchmark
+
+import Coin
 import org.openjdk.jmh.annotations.*
 import org.openjdk.jmh.infra.Blackhole
 import java.util.concurrent.TimeUnit
@@ -10,15 +13,15 @@ import java.util.concurrent.TimeUnit
 @Measurement(iterations = 5, time = 3, timeUnit = TimeUnit.SECONDS)
 open class CoinSeqBenchmark {
 
-    @Param("30", "50", "100", "300", "500")
-    var coinsSizer = 0
+    @Param("20", "30", "50", "60")
+    var coinsSize = 0
 
     private lateinit var coins: IntArray
     private val coin = Coin()
 
     @Setup(Level.Trial)
     fun setup() {
-        coins = coin.createRandomCoinSet(coinsSizer)
+        coins = Coin.createRandomCoinSet(coinsSize)
     }
 
     @Benchmark

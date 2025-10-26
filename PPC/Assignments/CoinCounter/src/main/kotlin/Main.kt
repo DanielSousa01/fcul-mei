@@ -2,9 +2,10 @@ import kotlin.system.exitProcess
 
 fun main() {
     val nCores = Runtime.getRuntime().availableProcessors()
-    val coin = Coin(nCores, 2)
+    val coin = Coin(10)
 
-    val coins = coin.createRandomCoinSet(30)
+    val coins = Coin.createRandomCoinSet(20)
+    println("Coins size: ${coins.size}")
 
     val repeats = 40
     for (i in 0 until repeats) {
