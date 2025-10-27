@@ -15,16 +15,6 @@ fun main() {
         val seqEndTime = System.nanoTime() - seqInitialTime
         println("$nCores;Sequential;$seqEndTime")
 
-        val parSortedInitialTime = System.nanoTime()
-        val rps = coin.parSorted(coins, 0, 0)
-        val parSortEndTime = System.nanoTime() - parSortedInitialTime
-        println("$nCores;ParallelSorted;$parSortEndTime")
-
-        if (rps != rs) {
-            println("Wrong Result!")
-            exitProcess(-1)
-        }
-
         val parInitialTime = System.nanoTime()
         val rp = coin.par(coins, 0, 0)
         val parEndTime = System.nanoTime() - parInitialTime
