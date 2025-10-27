@@ -27,12 +27,6 @@ open class CoinPar20Benchmark {
     }
 
     @Benchmark
-    fun benchmarkSorted(bl: Blackhole) {
-        val result = coin.parSorted(coins, 0, 0)
-        bl.consume(result)
-    }
-
-    @Benchmark
     fun benchmark(bl: Blackhole) {
         val result = coin.par(coins, 0, 0)
         bl.consume(result)

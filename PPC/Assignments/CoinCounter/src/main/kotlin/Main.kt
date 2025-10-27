@@ -2,22 +2,33 @@ import kotlin.system.exitProcess
 
 fun main() {
     val nCores = Runtime.getRuntime().availableProcessors()
-    val coin = Coin(10)
-
-    val coins = Coin.createRandomCoinSet(20)
-    println("Coins size: ${coins.size}")
+    val coin = Coin(15)
 
     val repeats = 40
     for (i in 0 until repeats) {
+        val coins = Coin.createRandomCoinSet(30)
+
+        println("--- Repeat ${i + 1} ---")
+
         val seqInitialTime = System.nanoTime()
         val rs = coin.seq(coins, 0, 0)
         val seqEndTime = System.nanoTime() - seqInitialTime
         println("$nCores;Sequential;$seqEndTime")
 
+        val parSortedInitialTime = System.nanoTime()
+        val rps = coin.parSorted(coins, 0, 0)
+        val parSortEndTime = System.nanoTime() - parSortedInitialTime
+        println("$nCores;ParallelSorted;$parSortEndTime")
+
+        if (rps != rs) {
+            println("Wrong Result!")
+            exitProcess(-1)
+        }
+
         val parInitialTime = System.nanoTime()
-        val rp = coin.parSorted(coins, 0, 0)
+        val rp = coin.par(coins, 0, 0)
         val parEndTime = System.nanoTime() - parInitialTime
-        println("$nCores;Parallel;$parEndTime")
+        println("$nCores;ParallelUnsorted;$parEndTime")
 
         if (rp != rs) {
             println("Wrong Result!")

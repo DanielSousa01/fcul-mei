@@ -28,16 +28,6 @@ class Coin(
         return max(a, b)
     }
 
-    fun parSorted(coins: IntArray, index: Int, accumulator: Int): Int {
-        memory.clear()
-        bestSoFar.set(0)
-
-        val sortedCoins = coins.sortedArrayDescending()
-
-        val task = CoinTask(sortedCoins, index, accumulator)
-        return threadPool.invoke(task)
-    }
-
     fun par(coins: IntArray, index: Int, accumulator: Int): Int {
         memory.clear()
         bestSoFar.set(0)
@@ -70,13 +60,6 @@ class Coin(
             }
 
             if (accumulator + coins[index] > LIMIT) {
-                memory[key] = -1
-                return -1
-            }
-
-            val remaining = coins.size - index
-            val maxPossible = accumulator + (remaining * coins[index])
-            if (maxPossible < bestSoFar.get()) {
                 memory[key] = -1
                 return -1
             }
