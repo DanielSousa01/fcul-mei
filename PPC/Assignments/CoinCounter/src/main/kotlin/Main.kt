@@ -15,7 +15,7 @@ fun main() {
         println("$nCores;Sequential;$seqEndTime")
 
         val parInitialTime = System.nanoTime()
-        val rp = coin.par(coins, 0, 0)
+        val rp = coin.parSorted(coins, 0, 0)
         val parEndTime = System.nanoTime() - parInitialTime
         println("$nCores;Parallel;$parEndTime")
 

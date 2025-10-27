@@ -28,13 +28,21 @@ class Coin(
         return max(a, b)
     }
 
-    fun par(coins: IntArray, index: Int, accumulator: Int): Int {
+    fun parSorted(coins: IntArray, index: Int, accumulator: Int): Int {
         memory.clear()
         bestSoFar.set(0)
 
         val sortedCoins = coins.sortedArrayDescending()
 
         val task = CoinTask(sortedCoins, index, accumulator)
+        return threadPool.invoke(task)
+    }
+
+    fun par(coins: IntArray, index: Int, accumulator: Int): Int {
+        memory.clear()
+        bestSoFar.set(0)
+
+        val task = CoinTask(coins, index, accumulator)
         return threadPool.invoke(task)
     }
 
