@@ -11,7 +11,6 @@ class Coin(
     private val threadPool: ForkJoinPool = ForkJoinPool(maxThreads)
 
     private val memory = ConcurrentHashMap<Pair<Int, Int>, Int>()
-    private val bestSoFar = AtomicInteger(0)
 
     fun seq(coins: IntArray, index: Int, accumulator: Int): Int {
         if (index >= coins.size) {
@@ -30,7 +29,6 @@ class Coin(
 
     fun par(coins: IntArray, index: Int, accumulator: Int): Int {
         memory.clear()
-        bestSoFar.set(0)
 
         val task = CoinTask(coins, index, accumulator)
         return threadPool.invoke(task)
@@ -50,11 +48,6 @@ class Coin(
 
             if (index >= coins.size) {
                 val result = if (accumulator < LIMIT) accumulator else -1
-
-                if (result > bestSoFar.get()) {
-                    bestSoFar.updateAndGet { currentBest -> max(currentBest, result) }
-                }
-
                 memory[key] = result
                 return result
             }
