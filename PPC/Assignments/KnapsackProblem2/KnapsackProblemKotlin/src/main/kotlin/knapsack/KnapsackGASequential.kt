@@ -9,8 +9,7 @@ import java.util.Random
 
 class KnapsackGASequential(override val silent: Boolean = false) : KnapsackGA {
     private val r = Random()
-    private var population: Array<Individual> = Array(POP_SIZE)
-    { Individual.createRandom(r) }
+    private var population: Array<Individual> = Array(POP_SIZE) { Individual.createRandom(r) }
 
     override fun run(): Individual {
         for (generation in 0 until N_GENERATIONS) {
