@@ -1,4 +1,4 @@
-package knapsack
+package knapsack.sequential
 
 import Individual
 import KnapsackGA

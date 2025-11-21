@@ -1,20 +1,29 @@
-import knapsack.KnapsackGACoroutine
-import knapsack.KnapsackGASequential
+import knapsack.coroutine.KnapsackGAChannel
+import knapsack.coroutine.KnapsackGACoroutine
+import knapsack.sequential.KnapsackGASequential
 
 fun main() {
-    val knapsackGASequential = KnapsackGASequential(silent = true)
-    val knapsackGACoroutine = KnapsackGACoroutine(silent = true, chunkSize = 500)
-
-    val coroutineTimeStart = System.currentTimeMillis()
-    println("Running Knapsack GA Coroutine")
-    knapsackGACoroutine.run()
-    val coroutineTimeEnd = System.currentTimeMillis()
+    val silent = false
+    val knapsackGASequential = KnapsackGASequential(silent = silent)
+    val knapsackGACoroutine = KnapsackGACoroutine(silent = silent, chunkSize = 500)
+    val knapsackGAChannel = KnapsackGAChannel(silent = silent)
 
     val sequentialTimeStart = System.currentTimeMillis()
     println("Running Knapsack GA Sequential")
     knapsackGASequential.run()
     val sequentialTimeEnd = System.currentTimeMillis()
 
+    val coroutineTimeStart = System.currentTimeMillis()
+    println("Running Knapsack GA Coroutine")
+    knapsackGACoroutine.run()
+    val coroutineTimeEnd = System.currentTimeMillis()
+
+    val channelTimeStart = System.currentTimeMillis()
+    println("Running Knapsack GA Channel")
+    knapsackGAChannel.run()
+    val channelTimeEnd = System.currentTimeMillis()
+
     println("Sequential Time: ${sequentialTimeEnd - sequentialTimeStart} ms")
     println("Coroutine Time: ${coroutineTimeEnd - coroutineTimeStart} ms")
+    println("Channel Time: ${channelTimeEnd - channelTimeStart} ms")
 }

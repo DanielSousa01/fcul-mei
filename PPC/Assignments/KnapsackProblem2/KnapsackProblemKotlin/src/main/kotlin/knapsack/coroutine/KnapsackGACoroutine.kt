@@ -1,4 +1,4 @@
-package knapsack
+package knapsack.coroutine
 
 import Individual
 import KnapsackGA
@@ -6,9 +6,8 @@ import KnapsackGA.Companion.N_GENERATIONS
 import KnapsackGA.Companion.POP_SIZE
 import KnapsackGA.Companion.PROB_MUTATION
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.Random
 import java.util.concurrent.ThreadLocalRandom
@@ -82,16 +81,14 @@ class KnapsackGACoroutine(
 
     private fun computeChunk(size: Int, startIdx: Int = 0, chunkProcessor: (Int) -> Unit) {
         runBlocking(Dispatchers.Default) {
-            coroutineScope {
-                (startIdx until size step chunkSize).map { chunkStart ->
-                    async {
-                        val chunkEnd = minOf(chunkStart + chunkSize, size)
-                        for (i in chunkStart until chunkEnd) {
-                            chunkProcessor(i)
-                        }
+            (startIdx until size step chunkSize).map { chunkStart ->
+                launch {
+                    val chunkEnd = minOf(chunkStart + chunkSize, size)
+                    for (i in chunkStart until chunkEnd) {
+                        chunkProcessor(i)
                     }
-                }.awaitAll()
-            }
+                }
+            }.joinAll()
         }
     }
 }
