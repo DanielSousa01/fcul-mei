@@ -2,7 +2,7 @@ import knapsack.KnapsackGACoroutine
 import knapsack.KnapsackGASequential
 
 fun main() {
-    val knapsackGASequential = KnapsackGASequential(silent = true, )
+    val knapsackGASequential = KnapsackGASequential(silent = true)
     val knapsackGACoroutine = KnapsackGACoroutine(silent = true, chunkSize = 500)
 
     val coroutineTimeStart = System.currentTimeMillis()

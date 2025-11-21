@@ -5,21 +5,17 @@ import KnapsackGA
 import KnapsackGA.Companion.N_GENERATIONS
 import KnapsackGA.Companion.POP_SIZE
 import KnapsackGA.Companion.PROB_MUTATION
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Dispatchers.Unconfined
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.runBlocking
 import java.util.Random
 import java.util.concurrent.ThreadLocalRandom
 
 class KnapsackGACoroutine(
     override val silent: Boolean = false,
-    val chunkSize: Int = 10,
+    val chunkSize: Int = 10
 ) : KnapsackGA {
     private var population: Array<Individual> = Array(POP_SIZE) { Individual.createRandom(Random()) }
 

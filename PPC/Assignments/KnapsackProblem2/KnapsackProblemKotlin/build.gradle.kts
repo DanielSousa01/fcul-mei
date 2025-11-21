@@ -18,6 +18,11 @@ dependencies {
     jmh("org.openjdk.jmh:jmh-generator-annprocess:1.37")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+
+    // Akka dependencies
+    implementation("com.typesafe.akka:akka-actor-typed_2.13:2.10.0")
+    implementation("com.typesafe.akka:akka-stream_2.13:2.10.0")
+    testImplementation("com.typesafe.akka:akka-actor-testkit-typed_2.13:2.10.0")
 }
 
 tasks.test {
