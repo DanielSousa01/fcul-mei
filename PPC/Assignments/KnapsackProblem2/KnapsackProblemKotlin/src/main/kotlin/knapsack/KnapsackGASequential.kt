@@ -51,12 +51,6 @@ class KnapsackGASequential(override val silent: Boolean = false) : KnapsackGA {
         /*
 		 * Returns the best individual of the population.
 		 */
-        var best = population[0]
-        for (other in population) {
-            if (other.fitness > best.fitness) {
-                best = other
-            }
-        }
-        return best
+        return population.maxByOrNull { it.fitness } ?: population[0]
     }
 }

@@ -5,27 +5,28 @@ import KnapsackGA
 import KnapsackGA.Companion.N_GENERATIONS
 import KnapsackGA.Companion.POP_SIZE
 import KnapsackGA.Companion.PROB_MUTATION
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Dispatchers.Unconfined
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.runBlocking
 import java.util.Random
 import java.util.concurrent.ThreadLocalRandom
 
-// TODO: CHUNKED VERSION
-class KnapsackGACoroutine(override val silent: Boolean = false) : KnapsackGA {
+class KnapsackGACoroutine(
+    override val silent: Boolean = false,
+    val chunkSize: Int = 10,
+) : KnapsackGA {
     private var population: Array<Individual> = Array(POP_SIZE) { Individual.createRandom(Random()) }
 
-    override fun run(): Individual = runBlocking {
+    override fun run(): Individual {
         for (generation in 0 until N_GENERATIONS) {
             // Step1 - Calculate Fitness
-            coroutineScope {
-                population.map { individual ->
-                    async {
-                        individual.measureFitness()
-                    }
-                }.awaitAll()
-            }
+            calculateFitness()
 
             // Step2 - Print the best individual so far.
             val best = bestOfPopulation()
@@ -34,41 +35,67 @@ class KnapsackGACoroutine(override val silent: Boolean = false) : KnapsackGA {
             }
 
             // Step3 - Find parents to mate (cross-over)
-            val newPopulation = Array(POP_SIZE) { best }
-
-            coroutineScope {
-                (1 until POP_SIZE).map { i ->
-                    async {
-                        val r = ThreadLocalRandom.current()
-                        // We select two parents, using a tournament.
-                        val parent1 = tournament(r, population)
-                        val parent2 = tournament(r, population)
-
-                        newPopulation[i] = parent1.crossoverWith(parent2, r)
-                    }
-                }.awaitAll()
-            }
+            val newPopulation = crossoverPopulation(best)
 
             // Step4 - Mutate
-            coroutineScope {
-                (1 until POP_SIZE).map { i ->
-                    async {
-                        val r = ThreadLocalRandom.current()
-
-                        if (r.nextDouble() < PROB_MUTATION) {
-                            newPopulation[i].mutate(r)
-                        }
-                    }
-                }.awaitAll()
-            }
+            mutatePopulation(newPopulation)
 
             population = newPopulation
         }
 
-        return@runBlocking population.first()
+        return population.first()
+    }
+
+    private fun calculateFitness() {
+        computeChunk(POP_SIZE) {
+            population[it].measureFitness()
+        }
     }
 
     private fun bestOfPopulation(): Individual {
+        /*
+		 * Returns the best individual of the population.
+		 */
         return population.maxByOrNull { it.fitness } ?: population[0]
+    }
+
+    private fun crossoverPopulation(best: Individual): Array<Individual> {
+        val newPopulation = Array(POP_SIZE) { best }
+
+        computeChunk(POP_SIZE, 1) {
+            val r = ThreadLocalRandom.current()
+            // We select two parents, using a tournament.
+            val parent1 = tournament(r, population)
+            val parent2 = tournament(r, population)
+
+            newPopulation[it] = parent1.crossoverWith(parent2, r)
+        }
+
+        return newPopulation
+    }
+
+    private fun mutatePopulation(newPopulation: Array<Individual>) {
+        computeChunk(POP_SIZE, 1) {
+            val r = ThreadLocalRandom.current()
+
+            if (r.nextDouble() < PROB_MUTATION) {
+                newPopulation[it].mutate(r)
+            }
+        }
+    }
+
+    private fun computeChunk(size: Int, startIdx: Int = 0, chunkProcessor: (Int) -> Unit) {
+        runBlocking(Dispatchers.Default) {
+            coroutineScope {
+                (startIdx until size step chunkSize).map { chunkStart ->
+                    async {
+                        val chunkEnd = minOf(chunkStart + chunkSize, size)
+                        for (i in chunkStart until chunkEnd) {
+                            chunkProcessor(i)
+                        }
+                    }
+                }.awaitAll()
+            }
+        }
     }
 }
