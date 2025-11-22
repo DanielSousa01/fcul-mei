@@ -6,7 +6,7 @@ fun main() {
     val silent = false
     val knapsackGASequential = KnapsackGASequential(silent = silent)
     val knapsackGACoroutine = KnapsackGACoroutine(silent = silent, chunkSize = 500)
-    val knapsackGAChannel = KnapsackGAChannel(silent = silent)
+    val knapsackGAChannel = KnapsackGAChannel(silent = silent, chunkSize = 500)
 
     val sequentialTimeStart = System.currentTimeMillis()
     println("Running Knapsack GA Sequential")

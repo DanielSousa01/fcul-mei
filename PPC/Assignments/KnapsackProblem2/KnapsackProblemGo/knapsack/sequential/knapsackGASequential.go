@@ -6,13 +6,13 @@ import (
 	"math/rand"
 )
 
-type KnapsackGA struct {
+type KnapsackGASequential struct {
 	r          *rand.Rand
 	population []*knapsack.Individual
 }
 
-func NewKnapsackGA() *KnapsackGA {
-	ga := &KnapsackGA{
+func NewKnapsackGASequential() *KnapsackGASequential {
+	ga := &KnapsackGASequential{
 		r:          rand.New(rand.NewSource(rand.Int63())),
 		population: make([]*knapsack.Individual, knapsack.PopSize),
 	}
@@ -21,13 +21,13 @@ func NewKnapsackGA() *KnapsackGA {
 	return ga
 }
 
-func (ga *KnapsackGA) populateInitialPopulationRandomly() {
+func (ga *KnapsackGASequential) populateInitialPopulationRandomly() {
 	for i := 0; i < knapsack.PopSize; i++ {
 		ga.population[i] = knapsack.NewIndividualRandom(ga.r)
 	}
 }
 
-func (ga *KnapsackGA) Run(silent bool) *knapsack.Individual {
+func (ga *KnapsackGASequential) Run(silent bool) *knapsack.Individual {
 	for g := 0; g < knapsack.NGenerations; g++ {
 		// Step1 - Calculate Fitness
 		for i := 0; i < knapsack.PopSize; i++ {
@@ -63,7 +63,7 @@ func (ga *KnapsackGA) Run(silent bool) *knapsack.Individual {
 	return ga.population[0]
 }
 
-func (ga *KnapsackGA) bestOfPopulation() *knapsack.Individual {
+func (ga *KnapsackGASequential) bestOfPopulation() *knapsack.Individual {
 	best := ga.population[0]
 	for _, other := range ga.population {
 		if other.Fitness > best.Fitness {

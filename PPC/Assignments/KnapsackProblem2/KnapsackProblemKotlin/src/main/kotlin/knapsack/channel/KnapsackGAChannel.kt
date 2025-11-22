@@ -15,7 +15,8 @@ import java.util.concurrent.ThreadLocalRandom
 
 class KnapsackGAChannel(
     override val silent: Boolean = false,
-    private val nWorkers: Int = Runtime.getRuntime().availableProcessors()
+    private val nWorkers: Int = Runtime.getRuntime().availableProcessors(),
+    private val chunkSize: Int = 10
 ) : KnapsackGA {
     private var population: Array<Individual> = Array(POP_SIZE) { Individual.createRandom(Random()) }
 
@@ -43,7 +44,7 @@ class KnapsackGAChannel(
     }
 
     private fun calculateFitness() {
-        compute(POP_SIZE) { idx ->
+        computeChannel(POP_SIZE) { idx ->
             population[idx].measureFitness()
         }
     }
@@ -58,7 +59,7 @@ class KnapsackGAChannel(
     private fun crossoverPopulation(best: Individual): Array<Individual> {
         val newPopulation = Array(POP_SIZE) { best }
 
-        compute(POP_SIZE, 1) { idx ->
+        computeChannel(POP_SIZE, 1) { idx ->
             val r = ThreadLocalRandom.current()
             // We select two parents, using a tournament.
             val parent1 = tournament(r, population)
@@ -71,7 +72,7 @@ class KnapsackGAChannel(
     }
 
     private fun mutatePopulation(newPopulation: Array<Individual>) {
-        compute(POP_SIZE, 1) { idx ->
+        computeChannel(POP_SIZE, 1) { idx ->
             val r = ThreadLocalRandom.current()
 
             if (r.nextDouble() < PROB_MUTATION) {
@@ -80,21 +81,24 @@ class KnapsackGAChannel(
         }
     }
 
-    private fun compute(size: Int, startIdx: Int = 0, processor: (Int) -> Unit) {
-        val workChannel = Channel<Int>(size)
+    private fun computeChannel(size: Int, startIdx: Int = 0, processor: (Int) -> Unit) {
+        val workChannel = Channel<Pair<Int, Int>>(size)
 
         runBlocking(Dispatchers.Default) {
             launch {
-                for (i in startIdx until size) {
-                    workChannel.send(i)
+                for (i in startIdx until size step chunkSize) {
+                    val end = minOf(i + chunkSize, size)
+                    workChannel.send(Pair(i, end))
                 }
                 workChannel.close()
             }
 
             List(nWorkers) {
                 launch {
-                    for (i in workChannel) {
-                        processor(i)
+                    for ((start, end) in workChannel) {
+                        for (j in start until end) {
+                            processor(j)
+                        }
                     }
                 }
             }.joinAll()
