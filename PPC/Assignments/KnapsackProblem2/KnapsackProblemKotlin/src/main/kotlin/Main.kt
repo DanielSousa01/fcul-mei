@@ -1,4 +1,4 @@
-import knapsack.coroutine.KnapsackGAChannel
+import knapsack.channel.KnapsackGAChannel
 import knapsack.coroutine.KnapsackGACoroutine
 import knapsack.sequential.KnapsackGASequential
 
