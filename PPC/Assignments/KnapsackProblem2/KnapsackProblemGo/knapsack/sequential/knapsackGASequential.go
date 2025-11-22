@@ -8,12 +8,13 @@ import (
 
 type KnapsackGA struct {
 	r          *rand.Rand
-	population [knapsack.PopSize]*knapsack.Individual
+	population []*knapsack.Individual
 }
 
 func NewKnapsackGA() *KnapsackGA {
 	ga := &KnapsackGA{
-		r: rand.New(rand.NewSource(rand.Int63())),
+		r:          rand.New(rand.NewSource(rand.Int63())),
+		population: make([]*knapsack.Individual, knapsack.PopSize),
 	}
 
 	ga.populateInitialPopulationRandomly()
@@ -40,7 +41,7 @@ func (ga *KnapsackGA) Run(silent bool) *knapsack.Individual {
 		}
 
 		// Step3 - Find parents to mate (cross-over)
-		newPopulation := [knapsack.PopSize]*knapsack.Individual{}
+		newPopulation := make([]*knapsack.Individual, knapsack.PopSize)
 		newPopulation[0] = best
 		for i := 1; i < knapsack.PopSize; i++ {
 			parent1 := knapsack.Tournament(ga.r, ga.population)

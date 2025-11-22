@@ -11,7 +11,7 @@ const (
 	TournamentSize = 3
 )
 
-func Tournament(r *rand.Rand, population [PopSize]*Individual) *Individual {
+func Tournament(r *rand.Rand, population []*Individual) *Individual {
 	best := population[r.Intn(PopSize)]
 
 	for i := 0; i < TournamentSize; i++ {

@@ -7,13 +7,13 @@ import (
 const GeneSize = 1000
 
 var (
-	values      [GeneSize]int
-	weights     [GeneSize]int
+	values      = make([]int, GeneSize)
+	weights     = make([]int, GeneSize)
 	weightLimit = 300
 )
 
 type Individual struct {
-	SelectedItems [GeneSize]bool
+	SelectedItems []bool
 	Fitness       int
 }
 
@@ -26,7 +26,10 @@ func InitiateProblem() {
 }
 
 func NewIndividualRandom(r *rand.Rand) *Individual {
-	ind := &Individual{}
+	ind := &Individual{
+		SelectedItems: make([]bool, GeneSize),
+		Fitness:       0,
+	}
 
 	for i := 0; i < GeneSize; i++ {
 		ind.SelectedItems[i] = r.Intn(2) == 1
@@ -52,7 +55,10 @@ func (ind *Individual) MeasureFitness() {
 }
 
 func (ind *Individual) CrossoverWith(mate *Individual, r *rand.Rand) *Individual {
-	child := &Individual{}
+	child := &Individual{
+		SelectedItems: make([]bool, GeneSize),
+		Fitness:       0,
+	}
 	crossoverPoint := r.Intn(GeneSize)
 
 	for i := 0; i < GeneSize; i++ {
