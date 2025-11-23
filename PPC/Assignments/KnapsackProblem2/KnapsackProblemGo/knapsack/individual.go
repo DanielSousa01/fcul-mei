@@ -5,11 +5,11 @@ import (
 )
 
 const GeneSize = 1000
+const weightLimit = 300
 
 var (
-	values      = make([]int, GeneSize)
-	weights     = make([]int, GeneSize)
-	weightLimit = 300
+	values  = make([]int, GeneSize)
+	weights = make([]int, GeneSize)
 )
 
 type Individual struct {
