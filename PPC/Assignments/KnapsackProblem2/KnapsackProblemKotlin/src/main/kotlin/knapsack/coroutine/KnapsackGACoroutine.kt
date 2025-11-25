@@ -42,7 +42,7 @@ class KnapsackGACoroutine(
     }
 
     private fun calculateFitness() {
-        computeChunk(POP_SIZE) {
+        computeCoroutines(POP_SIZE) {
             population[it].measureFitness()
         }
     }
@@ -57,7 +57,7 @@ class KnapsackGACoroutine(
     private fun crossoverPopulation(best: Individual): Array<Individual> {
         val newPopulation = Array(POP_SIZE) { best }
 
-        computeChunk(POP_SIZE, 1) {
+        computeCoroutines(POP_SIZE, 1) {
             val r = ThreadLocalRandom.current()
             // We select two parents, using a tournament.
             val parent1 = tournament(r, population)
@@ -70,7 +70,7 @@ class KnapsackGACoroutine(
     }
 
     private fun mutatePopulation(newPopulation: Array<Individual>) {
-        computeChunk(POP_SIZE, 1) {
+        computeCoroutines(POP_SIZE, 1) {
             val r = ThreadLocalRandom.current()
 
             if (r.nextDouble() < PROB_MUTATION) {
@@ -79,7 +79,7 @@ class KnapsackGACoroutine(
         }
     }
 
-    private fun computeChunk(size: Int, startIdx: Int = 0, chunkProcessor: (Int) -> Unit) {
+    private fun computeCoroutines(size: Int, startIdx: Int = 0, chunkProcessor: (Int) -> Unit) {
         runBlocking(Dispatchers.Default) {
             (startIdx until size step chunkSize).map { chunkStart ->
                 launch {

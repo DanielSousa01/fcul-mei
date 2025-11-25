@@ -1,3 +1,9 @@
 package knapsack.actor
 
-class CrossoverActor
+import akka.actor.AbstractActor
+
+class CrossoverActor : AbstractActor() {
+    override fun createReceive(): Receive? {
+        TODO("Not yet implemented")
+    }
+}

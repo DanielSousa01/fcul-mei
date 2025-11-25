@@ -29,6 +29,8 @@ func main() {
 	goroutineTimeEnd := time.Now()
 	goroutineDuration := goroutineTimeEnd.Sub(goroutineTimeStart)
 
+	println()
+
 	channelTimeStart := time.Now()
 	knapsackGAChannel.Run(false)
 	channelTimeEnd := time.Now()

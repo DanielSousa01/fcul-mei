@@ -1,21 +1,33 @@
- package knapsack.actor
+package knapsack.actor
 
- import Individual
- import KnapsackGA
- import KnapsackGA.Companion.N_GENERATIONS
- import KnapsackGA.Companion.POP_SIZE
- import java.util.Random
- import kotlin.compareTo
+import Individual
+import KnapsackGA
+import KnapsackGA.Companion.N_GENERATIONS
+import KnapsackGA.Companion.POP_SIZE
+import akka.actor.typed.ActorSystem
+import akka.actor.typed.javadsl.AskPattern
+import akka.actor.typed.javadsl.Behaviors
+import akka.actor.typed.javadsl.Routers
+import akka.util.Timeout
+import java.time.Duration
+import java.util.Random
+import java.util.concurrent.CompletionStage
+import kotlin.compareTo
 
- class KnapsackGAActor(override val silent: Boolean = false) : KnapsackGA {
+class KnapsackGAActor(override val silent: Boolean = false, val chunkSize: Int) : KnapsackGA {
     private var population: Array<Individual> = Array(POP_SIZE) { Individual.createRandom(Random()) }
+    private val system: ActorSystem<Nothing> = ActorSystem.create(Behaviors.empty(), "knapsackSystem")
+    private val timeout = Timeout.create(Duration.ofSeconds(10))
+    private val scheduler = system.scheduler()
+
+    // pool de workers criado uma vez (evita spawn dentro do loop)
+    private val fitnessWorkerPool = ActorSystem.create(FitnessActor.create(), "fitnessWorkerPool")
+
 
     override fun run(): Individual {
         for (generation in 0 until N_GENERATIONS) {
             // Step1 - Calculate Fitness
-            for (i in 0 until POP_SIZE) {
-                population[i].measureFitness()
-            }
+            computeFitnessChunk()
 
             // Step2 - Print the best individual so far.
             val best = bestOfPopulation()
@@ -52,4 +64,19 @@
  		 */
         return population.maxByOrNull { it.fitness } ?: population[0]
     }
- }
+
+    private fun computeFitnessChunk() {
+        val futures = mutableListOf<CompletionStage<KnapsackGAMessage.FitnessAck>>()
+
+        for (startIdx in 0 until POP_SIZE step chunkSize) {
+            val worker = system.systemActorOf(FitnessActor.create(), "fitnessWorker-$startIdx")
+
+            AskPattern.ask(
+                worker,
+                { replyTo -> CalculateFitness(population, chunkSize, startIdx, replyTo) },
+                timeout,
+                scheduler
+            )
+        }
+    }
+}
