@@ -5,7 +5,8 @@ import KnapsackGA
 import KnapsackGA.Companion.N_GENERATIONS
 import KnapsackGA.Companion.POP_SIZE
 import KnapsackGA.Companion.PROB_MUTATION
-import java.util.Random
+import KnapsackGA.Companion.tournament
+import java.util.*
 
 class KnapsackGASequential(override val silent: Boolean = false) : KnapsackGA {
     private val r = Random()

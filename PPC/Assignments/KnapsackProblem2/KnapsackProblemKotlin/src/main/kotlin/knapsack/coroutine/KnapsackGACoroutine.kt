@@ -5,11 +5,12 @@ import KnapsackGA
 import KnapsackGA.Companion.N_GENERATIONS
 import KnapsackGA.Companion.POP_SIZE
 import KnapsackGA.Companion.PROB_MUTATION
+import KnapsackGA.Companion.tournament
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.util.Random
+import java.util.*
 import java.util.concurrent.ThreadLocalRandom
 
 class KnapsackGACoroutine(

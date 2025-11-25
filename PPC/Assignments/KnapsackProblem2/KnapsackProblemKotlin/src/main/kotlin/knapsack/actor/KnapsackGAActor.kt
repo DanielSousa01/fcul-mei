@@ -2,81 +2,45 @@ package knapsack.actor
 
 import Individual
 import KnapsackGA
-import KnapsackGA.Companion.N_GENERATIONS
-import KnapsackGA.Companion.POP_SIZE
-import akka.actor.typed.ActorSystem
-import akka.actor.typed.javadsl.AskPattern
-import akka.actor.typed.javadsl.Behaviors
-import akka.actor.typed.javadsl.Routers
+import akka.actor.ActorSystem
+import akka.pattern.Patterns
 import akka.util.Timeout
-import java.time.Duration
-import java.util.Random
-import java.util.concurrent.CompletionStage
-import kotlin.compareTo
+import knapsack.actor.actors.MasterActor
+import knapsack.actor.actors.MasterActor.Companion.Finished
+import knapsack.actor.actors.MasterActor.Companion.Start
+import scala.concurrent.Await
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.Duration as ScalaDuration
+import java.time.Duration as JavaDuration
 
-class KnapsackGAActor(override val silent: Boolean = false, val chunkSize: Int) : KnapsackGA {
-    private var population: Array<Individual> = Array(POP_SIZE) { Individual.createRandom(Random()) }
-    private val system: ActorSystem<Nothing> = ActorSystem.create(Behaviors.empty(), "knapsackSystem")
-    private val timeout = Timeout.create(Duration.ofSeconds(10))
-    private val scheduler = system.scheduler()
-
-    // pool de workers criado uma vez (evita spawn dentro do loop)
-    private val fitnessWorkerPool = ActorSystem.create(FitnessActor.create(), "fitnessWorkerPool")
+class KnapsackGAActor(
+    override val silent: Boolean = false,
+    private val nWorkers: Int = Runtime.getRuntime().availableProcessors(),
+    val chunkSize: Int
+) : KnapsackGA {
 
 
     override fun run(): Individual {
-        for (generation in 0 until N_GENERATIONS) {
-            // Step1 - Calculate Fitness
-            computeFitnessChunk()
+        val system = ActorSystem.create("KnapsackSystem")
+        val timeout = Timeout.create(JavaDuration.ofMinutes(5))
 
-            // Step2 - Print the best individual so far.
-            val best = bestOfPopulation()
-            if (!silent) {
-                println("${this::class.simpleName}: Best at generation $generation is $best with ${best.fitness}")
-            }
+        val masterActor = system.actorOf(
+            akka.actor.Props.create(
+                MasterActor::class.java,
+                chunkSize,
+                silent,
+                nWorkers
+            ),
+            "masterActor"
+        )
 
-            // Step3 - Find parents to mate (cross-over)
-            val newPopulation = Array(POP_SIZE) { best }
+        val future = Patterns.ask(masterActor, Start(), timeout)
+        val result = Await.result(future, ScalaDuration.create(5, TimeUnit.MINUTES)) as Finished
 
-            for (i in 1 until POP_SIZE) {
-                // We select two parents, using a tournament.
-                val parent1 = tournament(r, population)
-                val parent2 = tournament(r, population)
+        system.terminate()
+        Await.ready(system.whenTerminated(), ScalaDuration.Inf())
 
-                newPopulation[i] = parent1.crossoverWith(parent2, r)
-            }
 
-            // Step4 - Mutate
-            for (i in 1 until POP_SIZE) {
-                if (r.nextDouble() compareTo KnapsackGA.Companion.PROB_MUTATION) {
-                    newPopulation[i].mutate(r)
-                }
-            }
-            population = newPopulation
-        }
-
-        return population.first()
-    }
-
-    private fun bestOfPopulation(): Individual {
-        /*
- 		 * Returns the best individual of the population.
- 		 */
-        return population.maxByOrNull { it.fitness } ?: population[0]
-    }
-
-    private fun computeFitnessChunk() {
-        val futures = mutableListOf<CompletionStage<KnapsackGAMessage.FitnessAck>>()
-
-        for (startIdx in 0 until POP_SIZE step chunkSize) {
-            val worker = system.systemActorOf(FitnessActor.create(), "fitnessWorker-$startIdx")
-
-            AskPattern.ask(
-                worker,
-                { replyTo -> CalculateFitness(population, chunkSize, startIdx, replyTo) },
-                timeout,
-                scheduler
-            )
-        }
+        return result.best
     }
 }
