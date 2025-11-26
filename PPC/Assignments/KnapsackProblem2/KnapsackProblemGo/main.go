@@ -2,6 +2,7 @@ package main
 
 import (
 	"KnapsackProblemGo/knapsack"
+	"KnapsackProblemGo/knapsack/actor"
 	"KnapsackProblemGo/knapsack/channel"
 	"KnapsackProblemGo/knapsack/goroutine"
 	"KnapsackProblemGo/knapsack/sequential"
@@ -16,6 +17,7 @@ func main() {
 	knapsackGASequential := sequential.NewKnapsackGASequential()
 	knapsackGAGoroutine := goroutine.NewKnapsackGAGoroutine(500)
 	knapsackGAChannel := channel.NewKnapsackGAChannel(16, 500)
+	knapsackGAActor := actor.NewKnapsackGAActor(16, 500)
 
 	sequentialTimeStart := time.Now()
 	knapsackGASequential.Run(false)
@@ -38,7 +40,15 @@ func main() {
 
 	println()
 
+	actorTimeStart := time.Now()
+	knapsackGAActor.Run(false)
+	actorTimeEnd := time.Now()
+	actorDuration := actorTimeEnd.Sub(actorTimeStart)
+
+	println()
+
 	println("Sequential Execution Time:", sequentialDuration.Milliseconds(), "ms")
 	println("Goroutine Execution Time:", goroutineDuration.Milliseconds(), "ms")
 	println("Channel Execution Time:", channelDuration.Milliseconds(), "ms")
+	println("Actor Execution Time:", actorDuration.Milliseconds(), "ms")
 }
