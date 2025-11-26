@@ -7,7 +7,7 @@ class FitnessActor : AbstractActor() {
     data class Request(
         val measureFitness: (Int) -> Unit,
         val startIdx: Int,
-        val endIdx: Int,
+        val endIdx: Int
     )
 
     data class Response(val total: Int)

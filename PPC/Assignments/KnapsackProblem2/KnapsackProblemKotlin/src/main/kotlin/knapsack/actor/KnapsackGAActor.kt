@@ -10,15 +10,14 @@ import knapsack.actor.actors.MasterActor.Companion.Finished
 import knapsack.actor.actors.MasterActor.Companion.Start
 import scala.concurrent.Await
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.Duration as ScalaDuration
 import java.time.Duration as JavaDuration
+import scala.concurrent.duration.Duration as ScalaDuration
 
 class KnapsackGAActor(
     override val silent: Boolean = false,
     private val nWorkers: Int = Runtime.getRuntime().availableProcessors(),
     val chunkSize: Int
 ) : KnapsackGA {
-
 
     override fun run(): Individual {
         val system = ActorSystem.create("KnapsackSystem")
@@ -39,7 +38,6 @@ class KnapsackGAActor(
 
         system.terminate()
         Await.ready(system.whenTerminated(), ScalaDuration.Inf())
-
 
         return result.best
     }

@@ -1,4 +1,4 @@
-import java.util.Random
+import java.util.*
 
 /*
 * This file is not supposed to be changed.
