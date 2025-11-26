@@ -61,7 +61,7 @@ func (ga *KnapsackChannel) Run(silent bool) *knapsack.Individual {
 }
 
 func (ga *KnapsackChannel) calculateFitness() {
-	ga.computeChannel(knapsack.PopSize, 0, func(i int) {
+	ga.computeChannel(knapsack.PopSize, 0, func(i int, _ *rand.Rand) {
 		ga.population[i].MeasureFitness()
 	})
 }
@@ -80,10 +80,7 @@ func (ga *KnapsackChannel) crossoverPopulation(best *knapsack.Individual) []*kna
 	newPopulation := make([]*knapsack.Individual, knapsack.PopSize)
 	newPopulation[0] = best
 
-	ga.computeChannel(knapsack.PopSize, 1, func(i int) {
-		seed := time.Now().UnixNano() + int64(i)*1000000
-		r := rand.New(rand.NewSource(seed))
-
+	ga.computeChannel(knapsack.PopSize, 1, func(i int, r *rand.Rand) {
 		parent1 := knapsack.Tournament(r, ga.population)
 		parent2 := knapsack.Tournament(r, ga.population)
 
@@ -94,17 +91,14 @@ func (ga *KnapsackChannel) crossoverPopulation(best *knapsack.Individual) []*kna
 }
 
 func (ga *KnapsackChannel) mutatePopulation(newPopulation []*knapsack.Individual) {
-	ga.computeChannel(knapsack.PopSize, 1, func(i int) {
-		seed := time.Now().UnixNano() + int64(i)*1000000
-		r := rand.New(rand.NewSource(seed))
-
+	ga.computeChannel(knapsack.PopSize, 1, func(i int, r *rand.Rand) {
 		if r.Float64() < knapsack.ProbMutation {
 			newPopulation[i].Mutate(r)
 		}
 	})
 }
 
-func (ga *KnapsackChannel) computeChannel(size int, startIDX int, chunkProcessor func(int)) {
+func (ga *KnapsackChannel) computeChannel(size int, startIDX int, chunkProcessor func(int, *rand.Rand)) {
 	var wg sync.WaitGroup
 	workChannel := make(chan ProcessChunk, ga.nWorkers)
 
@@ -112,9 +106,11 @@ func (ga *KnapsackChannel) computeChannel(size int, startIDX int, chunkProcessor
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			r := rand.New(rand.NewSource(time.Now().UnixNano() + int64(i)))
+
 			for idx := range workChannel {
 				for j := idx.startIdx; j < idx.endIdx; j++ {
-					chunkProcessor(j)
+					chunkProcessor(j, r)
 
 				}
 			}
