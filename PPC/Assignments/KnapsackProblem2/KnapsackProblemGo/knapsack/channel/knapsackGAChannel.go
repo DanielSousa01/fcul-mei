@@ -61,9 +61,56 @@ func (ga *KnapsackChannel) Run(silent bool) *knapsack.Individual {
 }
 
 func (ga *KnapsackChannel) calculateFitness() {
-	ga.computeChannel(knapsack.PopSize, 0, func(i int, _ *rand.Rand) {
-		ga.population[i].MeasureFitness()
-	})
+	messagePoolSize := (knapsack.PopSize + ga.chunkSize - 1) / ga.chunkSize
+	workChannel := make(chan ProcessIndividuals, messagePoolSize)
+	resultChannel := make(chan ProcessedIndividuals, messagePoolSize)
+
+	var wg sync.WaitGroup
+	for i := 0; i < ga.nWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for message := range workChannel {
+				chunk := message.population
+				for _, ind := range chunk {
+					ind.MeasureFitness()
+				}
+				resultChannel <- ProcessedIndividuals{
+					idx:        message.idx,
+					population: chunk,
+				}
+			}
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(resultChannel)
+	}()
+
+	for i := 0; i < messagePoolSize; i++ {
+		start := i * ga.chunkSize
+		end := start + ga.chunkSize
+		if end > knapsack.PopSize {
+			end = knapsack.PopSize
+		}
+		chunk := knapsack.DeepCopy(ga.population[start:end])
+
+		workChannel <- ProcessIndividuals{
+			idx:        i,
+			population: chunk,
+		}
+	}
+
+	close(workChannel)
+
+	for result := range resultChannel {
+		start := result.idx * ga.chunkSize
+
+		for j, ind := range result.population {
+			ga.population[start+j] = ind
+		}
+	}
 }
 
 func (ga *KnapsackChannel) bestOfPopulation() *knapsack.Individual {
@@ -77,60 +124,130 @@ func (ga *KnapsackChannel) bestOfPopulation() *knapsack.Individual {
 }
 
 func (ga *KnapsackChannel) crossoverPopulation(best *knapsack.Individual) []*knapsack.Individual {
+	toProcess := knapsack.PopSize - 1
+	messagePoolSize := (toProcess + ga.chunkSize - 1) / ga.chunkSize
+	workChannel := make(chan ProcessCrossoverIndividuals, messagePoolSize)
+	resultChannel := make(chan ProcessedCrossoverIndividuals, messagePoolSize)
+
 	newPopulation := make([]*knapsack.Individual, knapsack.PopSize)
 	newPopulation[0] = best
 
-	ga.computeChannel(knapsack.PopSize, 1, func(i int, r *rand.Rand) {
-		parent1 := knapsack.Tournament(r, ga.population)
-		parent2 := knapsack.Tournament(r, ga.population)
-
-		newPopulation[i] = parent1.CrossoverWith(parent2, r)
-	})
-
-	return newPopulation
-}
-
-func (ga *KnapsackChannel) mutatePopulation(newPopulation []*knapsack.Individual) {
-	ga.computeChannel(knapsack.PopSize, 1, func(i int, r *rand.Rand) {
-		if r.Float64() < knapsack.ProbMutation {
-			newPopulation[i].Mutate(r)
-		}
-	})
-}
-
-func (ga *KnapsackChannel) computeChannel(size int, startIDX int, chunkProcessor func(int, *rand.Rand)) {
 	var wg sync.WaitGroup
-	workChannel := make(chan ProcessChunk, ga.nWorkers)
-
 	for i := 0; i < ga.nWorkers; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			r := rand.New(rand.NewSource(time.Now().UnixNano() + int64(i)))
+			for message := range workChannel {
+				idx := message.idx
+				population := message.population
+				chunkSize := message.chunkSize
 
-			for idx := range workChannel {
-				for j := idx.startIdx; j < idx.endIdx; j++ {
-					chunkProcessor(j, r)
+				newSubPopulation := make([]*knapsack.Individual, chunkSize)
+				r := rand.New(rand.NewSource(time.Now().UnixNano() + int64(idx)))
 
+				for j := 0; j < chunkSize; j++ {
+					parent1 := knapsack.Tournament(r, population)
+					parent2 := knapsack.Tournament(r, population)
+
+					newSubPopulation[j] = parent1.CrossoverWith(parent2, r)
+				}
+
+				resultChannel <- ProcessedCrossoverIndividuals{
+					idx:           message.idx,
+					chunkSize:     chunkSize,
+					newPopulation: newSubPopulation,
 				}
 			}
 		}()
 	}
 
-	for i := startIDX; i < size; i += ga.chunkSize {
-		end := i + ga.chunkSize
-		if end > size {
-			end = size
-		}
+	go func() {
+		wg.Wait()
+		close(resultChannel)
+	}()
 
-		chunk := ProcessChunk{
-			startIdx: i,
-			endIdx:   end,
-		}
+	currentPop := knapsack.DeepCopy(ga.population)
 
-		workChannel <- chunk
+	for i := 0; i < messagePoolSize; i++ {
+		start := i * ga.chunkSize
+		remaining := toProcess - start
+		chunkSize := ga.chunkSize
+		if remaining < ga.chunkSize {
+			chunkSize = remaining
+		}
+		if chunkSize > 0 {
+			workChannel <- ProcessCrossoverIndividuals{
+				idx:        i,
+				population: currentPop,
+				chunkSize:  chunkSize,
+			}
+		}
 	}
 	close(workChannel)
 
-	wg.Wait()
+	for result := range resultChannel {
+		start := result.idx*ga.chunkSize + 1
+
+		for j, ind := range result.newPopulation {
+			newPopulation[start+j] = ind
+		}
+	}
+
+	return newPopulation
+}
+
+func (ga *KnapsackChannel) mutatePopulation(newPopulation []*knapsack.Individual) {
+	toProcess := knapsack.PopSize - 1
+	messagePoolSize := (toProcess + ga.chunkSize - 1) / ga.chunkSize
+	workChannel := make(chan ProcessIndividuals, messagePoolSize)
+	resultChannel := make(chan ProcessedIndividuals, messagePoolSize)
+
+	var wg sync.WaitGroup
+	for i := 0; i < ga.nWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for message := range workChannel {
+				idx := message.idx
+				chunk := message.population
+				r := rand.New(rand.NewSource(time.Now().UnixNano() + int64(idx)))
+				for _, ind := range chunk {
+					if r.Float64() < knapsack.ProbMutation {
+						ind.Mutate(r)
+					}
+				}
+				resultChannel <- ProcessedIndividuals{
+					idx:        idx,
+					population: chunk,
+				}
+			}
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(resultChannel)
+	}()
+
+	for i := 0; i < messagePoolSize; i++ {
+		start := i*ga.chunkSize + 1
+		end := start + ga.chunkSize
+		if end > knapsack.PopSize {
+			end = knapsack.PopSize
+		}
+
+		chunk := knapsack.DeepCopy(newPopulation[start:end])
+		workChannel <- ProcessIndividuals{
+			idx:        i,
+			population: chunk,
+		}
+	}
+	close(workChannel)
+
+	for result := range resultChannel {
+		start := result.idx*ga.chunkSize + 1
+		for j, ind := range result.population {
+			newPopulation[start+j] = ind
+		}
+	}
 }

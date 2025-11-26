@@ -3,6 +3,7 @@ package actors
 import (
 	"KnapsackProblemGo/knapsack"
 	"math/rand"
+	"time"
 
 	"github.com/asynkron/protoactor-go/actor"
 )
@@ -10,13 +11,15 @@ import (
 type CrossoverActor struct{}
 
 type CrossoverRequest struct {
-	Population    []*knapsack.Individual
-	NewIndividual func(int, *knapsack.Individual)
-	StartIdx      int
-	EndIdx        int
+	Population []*knapsack.Individual
+	ChunkSize  int
+	ChunkIdx   int
 }
 
-type CrossoverResponse struct{}
+type CrossoverResponse struct {
+	NewChunk []*knapsack.Individual
+	ChunkIdx int
+}
 
 func NewCrossoverActor() actor.Actor {
 	return &CrossoverActor{}
@@ -31,18 +34,21 @@ func (a *CrossoverActor) Receive(context actor.Context) {
 
 func (a *CrossoverActor) handleRequest(request *CrossoverRequest, context actor.Context) {
 	population := request.Population
-	newIndividual := request.NewIndividual
-	startIdx := request.StartIdx
-	endIdx := request.EndIdx
+	chunkSize := request.ChunkSize
+	idx := request.ChunkIdx
+	newChunk := make([]*knapsack.Individual, chunkSize)
 
-	r := rand.New(rand.NewSource(rand.Int63()))
+	r := rand.New(rand.NewSource(time.Now().UnixNano() + int64(idx)))
 
-	for i := startIdx; i < endIdx; i++ {
+	for i := 0; i < chunkSize; i++ {
 		parent1 := knapsack.Tournament(r, population)
 		parent2 := knapsack.Tournament(r, population)
 
-		newIndividual(i, parent1.CrossoverWith(parent2, r))
+		newChunk[i] = parent1.CrossoverWith(parent2, r)
 	}
 
-	context.Respond(&CrossoverResponse{})
+	context.Respond(&CrossoverResponse{
+		NewChunk: newChunk,
+		ChunkIdx: idx,
+	})
 }

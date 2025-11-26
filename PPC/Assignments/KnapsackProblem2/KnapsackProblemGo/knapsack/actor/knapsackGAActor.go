@@ -34,11 +34,6 @@ func NewKnapsackGAActor(numWorkers int, chunkSize int) *KnapsackGAActor {
 		system:          system,
 	}
 
-	props := actor.PropsFromProducer(func() actor.Actor {
-		return actors.NewBestOfActor()
-	})
-	ga.bestOfActor = system.Root.Spawn(props)
-
 	for i := 0; i < numWorkers; i++ {
 		fitnessProps := actor.PropsFromProducer(func() actor.Actor {
 			return actors.NewFitnessActor()
@@ -95,6 +90,7 @@ func (ga *KnapsackGAActor) parallelFitness() {
 		future interface {
 			Result() (interface{}, error)
 		}
+		startIdx int
 	}
 
 	var futures []futureResult
@@ -106,38 +102,41 @@ func (ga *KnapsackGAActor) parallelFitness() {
 			endIdx = knapsack.PopSize
 		}
 
-		start := startIdx
-		end := endIdx
-		pop := ga.population
+		chunk := knapsack.DeepCopy(ga.population[startIdx:endIdx])
 
 		request := &actors.FitnessRequest{
-			MeasureFitness: func(idx int) {
-				pop[idx].MeasureFitness()
-			},
-			StartIdx: start,
-			EndIdx:   end,
+			Chunk:    chunk,
+			ChunkIdx: actorIdx,
 		}
 
 		future := ga.system.Root.RequestFuture(ga.fitnessActors[actorIdx], request, -1)
-		futures = append(futures, futureResult{future: future})
+		futures = append(futures, futureResult{
+			future:   future,
+			startIdx: startIdx,
+		})
 
 		actorIdx = (actorIdx + 1) % ga.numWorkers
 	}
 
 	for _, f := range futures {
-		_, _ = f.future.Result()
+		result, err := f.future.Result()
+		if err == nil {
+			response := result.(*actors.FitnessResponse)
+			for i, ind := range response.Chunk {
+				ga.population[f.startIdx+i] = ind
+			}
+		}
 	}
 }
 
 func (ga *KnapsackGAActor) getBestIndividual() *knapsack.Individual {
-	request := &actors.BestOfRequest{
-		Individuals: ga.population,
+	best := ga.population[0]
+	for _, other := range ga.population {
+		if other.Fitness > best.Fitness {
+			best = other
+		}
 	}
-
-	future := ga.system.Root.RequestFuture(ga.bestOfActor, request, -1)
-	result, _ := future.Result()
-	response := result.(*actors.BestOfResponse)
-	return response.BestIndividual
+	return best
 }
 
 func (ga *KnapsackGAActor) crossover(best *knapsack.Individual) []*knapsack.Individual {
@@ -145,6 +144,8 @@ func (ga *KnapsackGAActor) crossover(best *knapsack.Individual) []*knapsack.Indi
 		future interface {
 			Result() (interface{}, error)
 		}
+		startIdx  int
+		chunkSize int
 	}
 
 	newPopulation := make([]*knapsack.Individual, knapsack.PopSize)
@@ -152,6 +153,7 @@ func (ga *KnapsackGAActor) crossover(best *knapsack.Individual) []*knapsack.Indi
 
 	var futures []futureResult
 	actorIdx := 0
+	popCopy := knapsack.DeepCopy(ga.population)
 
 	for startIdx := 1; startIdx < knapsack.PopSize; startIdx += ga.chunkSize {
 		endIdx := startIdx + ga.chunkSize
@@ -159,28 +161,32 @@ func (ga *KnapsackGAActor) crossover(best *knapsack.Individual) []*knapsack.Indi
 			endIdx = knapsack.PopSize
 		}
 
-		start := startIdx
-		end := endIdx
-		newPop := newPopulation
-		pop := ga.population
+		chunkSize := endIdx - startIdx
 
 		request := &actors.CrossoverRequest{
-			Population: pop,
-			NewIndividual: func(idx int, individual *knapsack.Individual) {
-				newPop[idx] = individual
-			},
-			StartIdx: start,
-			EndIdx:   end,
+			Population: popCopy,
+			ChunkSize:  chunkSize,
+			ChunkIdx:   actorIdx,
 		}
 
 		future := ga.system.Root.RequestFuture(ga.crossoverActors[actorIdx], request, -1)
-		futures = append(futures, futureResult{future: future})
+		futures = append(futures, futureResult{
+			future:    future,
+			startIdx:  startIdx,
+			chunkSize: chunkSize,
+		})
 
 		actorIdx = (actorIdx + 1) % ga.numWorkers
 	}
 
 	for _, f := range futures {
-		_, _ = f.future.Result()
+		result, err := f.future.Result()
+		if err == nil {
+			response := result.(*actors.CrossoverResponse)
+			for i, ind := range response.NewChunk {
+				newPopulation[f.startIdx+i] = ind
+			}
+		}
 	}
 
 	return newPopulation
@@ -191,6 +197,7 @@ func (ga *KnapsackGAActor) parallelMutation(population []*knapsack.Individual) {
 		future interface {
 			Result() (interface{}, error)
 		}
+		startIdx int
 	}
 
 	var futures []futureResult
@@ -202,29 +209,29 @@ func (ga *KnapsackGAActor) parallelMutation(population []*knapsack.Individual) {
 			endIdx = knapsack.PopSize
 		}
 
-		start := startIdx
-		end := endIdx
-		pop := population
-		seed := time.Now().UnixNano() + int64(startIdx)*1000000
-		r := rand.New(rand.NewSource(seed))
+		chunk := knapsack.DeepCopy(population[startIdx:endIdx])
 
 		request := &actors.MutateRequest{
-			Mutate: func(idx int) {
-				if r.Float64() < knapsack.ProbMutation {
-					pop[idx].Mutate(r)
-				}
-			},
-			StartIdx: start,
-			EndIdx:   end,
+			Chunk:    chunk,
+			ChunkIdx: actorIdx,
 		}
 
 		future := ga.system.Root.RequestFuture(ga.mutateActors[actorIdx], request, -1)
-		futures = append(futures, futureResult{future: future})
+		futures = append(futures, futureResult{
+			future:   future,
+			startIdx: startIdx,
+		})
 
 		actorIdx = (actorIdx + 1) % ga.numWorkers
 	}
 
 	for _, f := range futures {
-		_, _ = f.future.Result()
+		result, err := f.future.Result()
+		if err == nil {
+			response := result.(*actors.MutateResponse)
+			for i, ind := range response.Chunk {
+				population[f.startIdx+i] = ind
+			}
+		}
 	}
 }

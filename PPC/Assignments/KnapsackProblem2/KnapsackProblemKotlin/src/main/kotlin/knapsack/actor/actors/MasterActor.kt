@@ -23,11 +23,6 @@ class MasterActor(
             .props(Props.create(FitnessActor::class.java)),
         "fitnessWorkerPool"
     )
-    private val bestOfPool: ActorRef = context.actorOf(
-        RoundRobinPool(poolSize)
-            .props(Props.create(BestOfActor::class.java)),
-        "bestOfWorkerPool"
-    )
     private val crossoverPool: ActorRef = context.actorOf(
         RoundRobinPool(poolSize)
             .props(Props.create(CrossoverActor::class.java)),
@@ -72,18 +67,22 @@ class MasterActor(
     }
 
     private fun bestOfPopulation() {
-        val message = BestOfActor.Request(population)
-        bestOfPool.tell(message, self)
+        best = population.maxByOrNull { it.fitness } ?: population[0]
+
+        if (!silent) {
+            println("KnapsackGAActor: Best at generation $generation is $best with ${best.fitness}")
+        }
+        crossoverPopulation()
     }
 
     private fun crossoverPopulation() {
         responsesReceived = 0
         chunksExpected = 0
         newPopulation = Array(POP_SIZE) { best }
-
         val populationSnapshot = population.deepCopy()
 
         for (startIdx in 1 until POP_SIZE step chunkSize) {
+
             val endIdx = minOf(startIdx + chunkSize, POP_SIZE)
             val localChunkSize = endIdx - startIdx
 
@@ -127,15 +126,6 @@ class MasterActor(
                 if (responsesReceived == chunksExpected) {
                     bestOfPopulation()
                 }
-            }
-            .match(BestOfActor.Response::class.java) { msg ->
-                best = msg.best
-
-                if (!silent) {
-                    println("KnapsackGAActor: Best at generation $generation is $best with ${best.fitness}")
-                }
-
-                crossoverPopulation()
             }
             .match(CrossoverActor.Response::class.java) { msg ->
                 val startIdx = 1 + msg.chunkIdx * chunkSize

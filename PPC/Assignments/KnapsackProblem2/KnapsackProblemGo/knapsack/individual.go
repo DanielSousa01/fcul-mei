@@ -37,6 +37,23 @@ func NewIndividualRandom(r *rand.Rand) *Individual {
 	return ind
 }
 
+func (ind *Individual) deepCopy() *Individual {
+	clone := &Individual{
+		SelectedItems: make([]bool, GeneSize),
+		Fitness:       ind.Fitness,
+	}
+	copy(clone.SelectedItems, ind.SelectedItems)
+	return clone
+}
+
+func DeepCopy(arrInd []*Individual) []*Individual {
+	cloneArr := make([]*Individual, len(arrInd))
+	for i, ind := range arrInd {
+		cloneArr[i] = ind.deepCopy()
+	}
+	return cloneArr
+}
+
 func (ind *Individual) MeasureFitness() {
 	totalWeight := 0
 	totalValue := 0

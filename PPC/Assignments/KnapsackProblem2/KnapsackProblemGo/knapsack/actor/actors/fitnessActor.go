@@ -1,18 +1,22 @@
 package actors
 
 import (
+	"KnapsackProblemGo/knapsack"
+
 	"github.com/asynkron/protoactor-go/actor"
 )
 
 type FitnessActor struct{}
 
 type FitnessRequest struct {
-	MeasureFitness func(int)
-	StartIdx       int
-	EndIdx         int
+	Chunk    []*knapsack.Individual
+	ChunkIdx int
 }
 
-type FitnessResponse struct{}
+type FitnessResponse struct {
+	Chunk    []*knapsack.Individual
+	ChunkIdx int
+}
 
 func NewFitnessActor() actor.Actor {
 	return &FitnessActor{}
@@ -26,13 +30,14 @@ func (a *FitnessActor) Receive(context actor.Context) {
 }
 
 func (a *FitnessActor) handleRequest(request *FitnessRequest, context actor.Context) {
-	measureFitness := request.MeasureFitness
-	startIdx := request.StartIdx
-	endIdx := request.EndIdx
+	chunk := request.Chunk
 
-	for i := startIdx; i < endIdx; i++ {
-		measureFitness(i)
+	for _, i := range chunk {
+		i.MeasureFitness()
 	}
 
-	context.Respond(&FitnessResponse{})
+	context.Respond(&FitnessResponse{
+		Chunk:    chunk,
+		ChunkIdx: request.ChunkIdx,
+	})
 }

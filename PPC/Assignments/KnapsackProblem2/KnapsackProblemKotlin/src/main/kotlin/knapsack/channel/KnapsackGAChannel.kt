@@ -17,6 +17,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.*
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.compareTo
 import kotlin.div
@@ -37,7 +38,7 @@ class KnapsackGAChannel(
             // Step2 - Print the best individual so far.
             val best = bestOfPopulation()
             if (!silent) {
-                println("${this::class.simpleName}: Best at generation $generation is $best with ${best.fitness}")
+                println("KnapsackGAChannel: Best at generation $generation is $best with ${best.fitness}")
             }
 
             // Step3 - Find parents to mate (cross-over)
@@ -56,6 +57,7 @@ class KnapsackGAChannel(
         val messagePoolSize = (POP_SIZE + chunkSize - 1) / chunkSize
         val workChannel = Channel<ProcessIndividuals>(messagePoolSize)
         val resultChannel = Channel<ProcessedIndividuals>(messagePoolSize)
+        val countDownLatch = CountDownLatch(nWorkers)
 
         repeat(nWorkers) {
             launch {
@@ -66,31 +68,31 @@ class KnapsackGAChannel(
                     }
                     resultChannel.send(ProcessedIndividuals(message.idx, subPopulation))
                 }
+                countDownLatch.countDown()
             }
         }
 
         launch {
-            val currentPop = population.deepCopy()
-
-            for (idx in 0 until messagePoolSize) {
-                val start = idx * chunkSize
-                val end = minOf((idx + 1) * chunkSize, POP_SIZE)
-                val chunk = currentPop.sliceArray(start until end)
-
-                workChannel.send(ProcessIndividuals(idx, chunk))
-            }
-            workChannel.close()
+            countDownLatch.await()
+            resultChannel.close()
         }
 
-        repeat(messagePoolSize) {
-            val result = resultChannel.receive()
+        for (idx in 0 until messagePoolSize) {
+            val start = idx * chunkSize
+            val end = minOf((idx + 1) * chunkSize, POP_SIZE)
+            val chunk = population.sliceArray(start until end).deepCopy()
+
+            workChannel.send(ProcessIndividuals(idx, chunk))
+        }
+        workChannel.close()
+
+        for (result in resultChannel) {
             val startIdx = result.idx * chunkSize
 
             for (i in result.population.indices) {
                 population[startIdx + i] = result.population[i]
             }
         }
-        resultChannel.close()
     }
 
     private fun bestOfPopulation(): Individual {
@@ -105,6 +107,7 @@ class KnapsackGAChannel(
         val messagePoolSize = (toProcess + chunkSize - 1) / chunkSize
         val workChannel = Channel<ProcessCrossoverIndividuals>(messagePoolSize)
         val resultChannel = Channel<ProcessedCrossoverIndividuals>(messagePoolSize)
+        val countDownLatch = CountDownLatch(nWorkers)
 
         val newPopulation = Array(POP_SIZE) { best }
 
@@ -128,37 +131,39 @@ class KnapsackGAChannel(
 
                     resultChannel.send(ProcessedCrossoverIndividuals(message.idx, chunkSize, newSubPopulation))
                 }
+                countDownLatch.countDown()
             }
         }
 
         launch {
-            val currentPop = population.deepCopy()
-
-            for (idx in 0 until messagePoolSize) {
-                val start = idx * chunkSize
-                val remaining = toProcess - start
-                val chunkSize = minOf(chunkSize, remaining)
-                if (chunkSize <= 0) continue
-                workChannel.send(
-                    ProcessCrossoverIndividuals(
-                        idx,
-                        chunkSize,
-                        currentPop
-                    )
-                )
-            }
-            workChannel.close()
+            countDownLatch.await()
+            resultChannel.close()
         }
 
-        repeat(messagePoolSize) {
-            val result = resultChannel.receive()
+        val currentPop = population.deepCopy()
+
+        for (idx in 0 until messagePoolSize) {
+            val start = idx * chunkSize
+            val remaining = toProcess - start
+            val chunkSize = minOf(chunkSize, remaining)
+            if (chunkSize <= 0) continue
+            workChannel.send(
+                ProcessCrossoverIndividuals(
+                    idx,
+                    chunkSize,
+                    currentPop
+                )
+            )
+        }
+        workChannel.close()
+
+        for (result in resultChannel) {
             val startIdx = 1 + result.idx * result.chunkSize
 
             for (i in result.newPopulation.indices) {
                 newPopulation[startIdx + i] = result.newPopulation[i]
             }
         }
-        resultChannel.close()
 
         return@coroutineScope newPopulation
     }
@@ -166,8 +171,9 @@ class KnapsackGAChannel(
     private suspend fun mutatePopulation(newPopulation: Array<Individual>) = coroutineScope {
         val toProcess = POP_SIZE - 1
         val messagePoolSize = (toProcess + chunkSize - 1) / chunkSize
-        val workChannel = Channel<ProcessedIndividuals>(messagePoolSize)
+        val workChannel = Channel<ProcessIndividuals>(messagePoolSize)
         val resultChannel = Channel<ProcessedIndividuals>(messagePoolSize)
+        val countDownLatch = CountDownLatch(nWorkers)
 
         repeat(nWorkers) {
             launch {
@@ -181,33 +187,32 @@ class KnapsackGAChannel(
                     }
                     resultChannel.send(ProcessedIndividuals(message.idx, subPopulation))
                 }
+                countDownLatch.countDown()
             }
         }
 
         launch {
-            val currentPop = newPopulation.deepCopy()
-
-            for (idx in 0 until messagePoolSize) {
-                val startIdx = 1 + idx * chunkSize
-                val endIdx = minOf((idx + 1) * chunkSize, POP_SIZE)
-                if (startIdx >= endIdx) continue
-
-                val chunk = currentPop.sliceArray(startIdx until endIdx)
-
-                workChannel.send(ProcessedIndividuals(idx, chunk))
-            }
-            workChannel.close()
+            countDownLatch.await()
+            resultChannel.close()
         }
 
-        repeat(messagePoolSize) {
-            val result = resultChannel.receive()
-            val startIdx = 1 + result.idx * chunkSize
+        for (idx in 0 until messagePoolSize) {
+            val startIdx = 1 + idx * chunkSize
+            val endIdx = minOf((idx + 1) * chunkSize, POP_SIZE)
+            if (startIdx >= endIdx) continue
 
+            val chunk = newPopulation.sliceArray(startIdx until endIdx).deepCopy()
+
+            workChannel.send(ProcessIndividuals(idx, chunk))
+        }
+        workChannel.close()
+
+        for (result in resultChannel) {
+            val startIdx = 1 + result.idx * chunkSize
             for (i in result.population.indices) {
                 newPopulation[startIdx + i] = result.population[i]
             }
         }
-        resultChannel.close()
 
     }
 

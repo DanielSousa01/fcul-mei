@@ -1,12 +1,13 @@
 use std::sync::mpsc;
 use std::thread;
+use std::sync::{Arc, Mutex};
 use rand::Rng;
 use crate::knapsack::individual::{Individual, new_individual_random, GEN_SIZE};
 use crate::knapsack::knapsack_ga::{tournament, N_GENERATIONS, POP_SIZE, PROB_MUTATION};
 
 
 pub struct KnapsackGAChannel {
-    population : Vec<Individual>,
+    population: Vec<Individual>,
     n_workers: usize,
     chunk_size: usize,
 }
@@ -57,18 +58,56 @@ impl KnapsackGAChannel {
     }
 
     fn calculate_fitness(&mut self) {
-        let population_ptr = &mut self.population as *mut Vec<Individual> as usize;
+        let (work_tx, work_rx) = mpsc::channel::<(usize, usize, Vec<Individual>)>();
+        let work_rx = Arc::new(Mutex::new(work_rx));
+
+        let (result_tx, result_rx) = mpsc::channel::<(usize, Vec<Individual>)>();
+
         let chunk_size = self.chunk_size;
-        let n_workers = self.n_workers;
+        let population_clone = self.population.clone();
 
-        let processor = move |idx: usize| {
-            unsafe {
-                let population = &mut *(population_ptr as *mut Vec<Individual>);
-                population[idx].measure_fitness();
+        let producer = thread::spawn(move || {
+            let mut start = 0;
+            while start < POP_SIZE {
+                let end = (start + chunk_size).min(POP_SIZE);
+                let chunk = population_clone[start..end].to_vec();
+                work_tx.send((start, end, chunk)).ok();
+                start = end;
             }
-        };
+        });
 
-        Self::compute_channel(POP_SIZE, 0, chunk_size, n_workers, processor);
+        let mut workers = vec![];
+        for _ in 0..self.n_workers {
+            let work_rx = Arc::clone(&work_rx);
+            let result_tx = result_tx.clone();
+
+            workers.push(thread::spawn(move || {
+                loop {
+                    let work = work_rx.lock().unwrap().recv();
+                    match work {
+                        Ok((start_idx, _end_idx, mut chunk)) => {
+                            for individual in chunk.iter_mut() {
+                                individual.measure_fitness();
+                            }
+                            result_tx.send((start_idx, chunk)).ok();
+                        }
+                        Err(_) => break,
+                    }
+                }
+            }));
+        }
+
+        producer.join().ok();
+        drop(result_tx);
+
+        for worker in workers {
+            worker.join().ok();
+        }
+
+        while let Ok((start_idx, chunk)) = result_rx.recv() {
+            let end_idx = start_idx + chunk.len();
+            self.population[start_idx..end_idx].copy_from_slice(&chunk);
+        }
     }
 
     fn best_of_population(&self) -> &Individual {
@@ -84,78 +123,44 @@ impl KnapsackGAChannel {
     }
 
     fn crossover_population(&mut self, new_population: &mut Vec<Individual>) {
-        let population_ptr = &mut self.population as *mut Vec<Individual> as usize;
-        let new_population_ptr = new_population as *mut Vec<Individual> as usize;
+        let (work_tx, work_rx) = mpsc::channel::<(usize, usize)>();
+        let work_rx = Arc::new(Mutex::new(work_rx));
+
+        let (result_tx, result_rx) = mpsc::channel::<(usize, Vec<Individual>)>();
+
         let chunk_size = self.chunk_size;
-        let n_workers = self.n_workers;
-
-        let processor = move |idx: usize| {
-            unsafe {
-                let mut r = rand::rng();
-                let population = &mut *(population_ptr as *mut Vec<Individual>);
-                let new_pop = &mut *(new_population_ptr as *mut Vec<Individual>);
-
-                let parent1 = tournament(&mut r, population);
-                let parent2 = tournament(&mut r, population);
-
-                new_pop[idx] = parent1.crossover_with(parent2, &mut r);
-            }
-        };
-
-        Self::compute_channel(POP_SIZE, 1, chunk_size, n_workers, processor);
-    }
-
-    fn mutate_population(&mut self, new_population: &mut Vec<Individual>) {
-        let population_ptr = new_population as *mut Vec<Individual> as usize;
-        let chunk_size = self.chunk_size;
-        let n_workers = self.n_workers;
-
-        let processor = move |idx: usize| {
-            unsafe {
-                let mut r = rand::rng();
-                let population = &mut *(population_ptr as *mut Vec<Individual>);
-
-                if r.random::<f64>() < PROB_MUTATION {
-                    population[idx].mutate(&mut r);
-                }
-            }
-        };
-
-        Self::compute_channel(POP_SIZE, 1, chunk_size, n_workers, processor);
-    }
-
-
-    fn compute_channel<F>(size: usize, start_idx: usize, chunk_size: usize, n_workers: usize, processor: F)
-    where
-        F: Fn(usize) + Send + Sync + Clone + 'static,
-    {
-        let (sx, rx) = mpsc::channel::<(usize, usize)>();
-        let rx = std::sync::Arc::new(std::sync::Mutex::new(rx));
-
-        // Producer thread
         let producer = thread::spawn(move || {
-            let mut i = start_idx;
-            while i < size {
-                let end = (i + chunk_size).min(size);
-                sx.send((i, end)).ok();
-                i += chunk_size;
+            let mut start = 1;
+            while start < POP_SIZE {
+                let end = (start + chunk_size).min(POP_SIZE);
+                work_tx.send((start, end)).ok();
+                start = end;
             }
         });
 
-        // Worker threads
+        let population_clone = self.population.clone();
         let mut workers = vec![];
-        for _ in 0..n_workers {
-            let processor_clone = processor.clone();
-            let rx_clone = rx.clone();
+
+        for _ in 0..self.n_workers {
+            let work_rx = Arc::clone(&work_rx);
+            let result_tx = result_tx.clone();
+            let population = population_clone.clone();
 
             workers.push(thread::spawn(move || {
+                let mut r = rand::rng();
                 loop {
-                    let item = rx_clone.lock().unwrap().recv();
-                    match item {
-                        Ok((start, end)) => {
-                            for j in start..end {
-                                processor_clone(j);
+                    let work = work_rx.lock().unwrap().recv();
+                    match work {
+                        Ok((start_idx, end_idx)) => {
+                            let mut offspring = Vec::new();
+
+                            for _ in start_idx..end_idx {
+                                let parent1 = tournament(&mut r, &population);
+                                let parent2 = tournament(&mut r, &population);
+                                offspring.push(parent1.crossover_with(parent2, &mut r));
                             }
+
+                            result_tx.send((start_idx, offspring)).ok();
                         }
                         Err(_) => break,
                     }
@@ -163,14 +168,76 @@ impl KnapsackGAChannel {
             }));
         }
 
-        // Wait for producer to finish
         producer.join().ok();
+        drop(result_tx);
 
-        // Wait for all workers to finish
         for worker in workers {
             worker.join().ok();
         }
+
+        while let Ok((start_idx, chunk)) = result_rx.recv() {
+            let end_idx = start_idx + chunk.len();
+            new_population[start_idx..end_idx].copy_from_slice(&chunk);
+        }
     }
 
+    fn mutate_population(&mut self, new_population: &mut Vec<Individual>) {
+        let (work_tx, work_rx) = mpsc::channel::<(usize, usize, Vec<Individual>)>();
+        let work_rx = Arc::new(Mutex::new(work_rx));
 
+        let (result_tx, result_rx) = mpsc::channel::<(usize, Vec<Individual>)>();
+
+        let chunk_size = self.chunk_size;
+        let population_clone = new_population[1..].to_vec();
+
+        let producer = thread::spawn(move || {
+            let mut start = 0;
+            let total_size = population_clone.len();
+
+            while start < total_size {
+                let end = (start + chunk_size).min(total_size);
+                let chunk = population_clone[start..end].to_vec();
+                work_tx.send((start, end, chunk)).ok();
+                start = end;
+            }
+        });
+
+        let mut workers = vec![];
+
+        for _ in 0..self.n_workers {
+            let work_rx = Arc::clone(&work_rx);
+            let result_tx = result_tx.clone();
+
+            workers.push(thread::spawn(move || {
+                let mut r = rand::rng();
+                loop {
+                    let work = work_rx.lock().unwrap().recv();
+                    match work {
+                        Ok((start_idx, _end_idx, mut chunk)) => {
+                            for individual in chunk.iter_mut() {
+                                if r.random::<f64>() < PROB_MUTATION {
+                                    individual.mutate(&mut r);
+                                }
+                            }
+                            result_tx.send((start_idx, chunk)).ok();
+                        }
+                        Err(_) => break,
+                    }
+                }
+            }));
+        }
+
+        producer.join().ok();
+        drop(result_tx);
+
+        for worker in workers {
+            worker.join().ok();
+        }
+
+        while let Ok((start_idx, chunk)) = result_rx.recv() {
+            let actual_start = start_idx + 1;
+            let actual_end = actual_start + chunk.len();
+            new_population[actual_start..actual_end].copy_from_slice(&chunk);
+        }
+    }
 }

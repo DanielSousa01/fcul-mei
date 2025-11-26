@@ -13,10 +13,15 @@ fun main() {
     println("Warming up...")
     for (i in 1..3) {
         println("Warmup iteration $i")
+        println("Running Knapsack GA Sequential")
         knapsackGASequential.run()
+        println("Running Knapsack GA Coroutine")
         knapsackGACoroutine.run()
+        println("Running Knapsack GA Channel")
         knapsackGAChannel.run()
+        println("Running Knapsack GA Actor")
         knapsackGAActor.run()
+        println("Warmup iteration $i complete.")
     }
     println("Warmup complete.")
 
