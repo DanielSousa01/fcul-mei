@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	//silent := false
+	silent := true
 
 	knapsack.InitiateProblem()
 
@@ -19,36 +19,68 @@ func main() {
 	knapsackGAChannel := channel.NewKnapsackGAChannel(16, 500)
 	knapsackGAActor := actor.NewKnapsackGAActor(16, 500)
 
-	sequentialTimeStart := time.Now()
-	knapsackGASequential.Run(false)
-	sequentialTimeEnd := time.Now()
-	sequentialDuration := sequentialTimeEnd.Sub(sequentialTimeStart)
+	//warm up
+	println("Warming up...")
+	for i := 1; i <= 3; i++ {
+		println("Warmup iteration ", i)
+		knapsackGASequential.Run(silent)
+		knapsackGAGoroutine.Run(silent)
+		knapsackGAChannel.Run(silent)
+		knapsackGAActor.Run(silent)
+		println("Iteration ", i, " done")
+	}
+	println("Warmup comlete.")
 
-	println()
+	sequentialTimes := make([]time.Duration, 5)
+	goroutineTimes := make([]time.Duration, 5)
+	channelTimes := make([]time.Duration, 5)
+	actorTimes := make([]time.Duration, 5)
 
-	goroutineTimeStart := time.Now()
-	knapsackGAGoroutine.Run(false)
-	goroutineTimeEnd := time.Now()
-	goroutineDuration := goroutineTimeEnd.Sub(goroutineTimeStart)
+	for i := 0; i < 5; i++ {
+		println(i+1, ": Running Sequential GA...")
+		sequentialTimeStart := time.Now()
+		knapsackGASequential.Run(silent)
+		sequentialTimeEnd := time.Now()
+		sequentialTimes[i] = sequentialTimeEnd.Sub(sequentialTimeStart)
 
-	println()
+		println(i+1, ": Running Goroutine GA...")
+		goroutineTimeStart := time.Now()
+		knapsackGAGoroutine.Run(silent)
+		goroutineTimeEnd := time.Now()
+		goroutineTimes[i] = goroutineTimeEnd.Sub(goroutineTimeStart)
 
-	channelTimeStart := time.Now()
-	knapsackGAChannel.Run(false)
-	channelTimeEnd := time.Now()
-	channelDuration := channelTimeEnd.Sub(channelTimeStart)
+		println(i+1, ": Running Channel GA...")
+		channelTimeStart := time.Now()
+		knapsackGAChannel.Run(silent)
+		channelTimeEnd := time.Now()
+		channelTimes[i] = channelTimeEnd.Sub(channelTimeStart)
 
-	println()
+		println(i+1, ": Running Actor GA...")
+		actorTimeStart := time.Now()
+		knapsackGAActor.Run(silent)
+		actorTimeEnd := time.Now()
+		actorTimes[i] = actorTimeEnd.Sub(actorTimeStart)
+	}
 
-	actorTimeStart := time.Now()
-	knapsackGAActor.Run(false)
-	actorTimeEnd := time.Now()
-	actorDuration := actorTimeEnd.Sub(actorTimeStart)
+	sequentialTimeAvg := avgMillis(sequentialTimes)
+	goroutineTimeAvg := avgMillis(goroutineTimes)
+	channelTimeAvg := avgMillis(channelTimes)
+	actorTimeAvg := avgMillis(actorTimes)
 
-	println()
+	println("Average Times (ms):")
+	println("Sequential: ", sequentialTimeAvg)
+	println("Goroutine:  ", goroutineTimeAvg)
+	println("Channel:    ", channelTimeAvg)
+	println("Actor:      ", actorTimeAvg)
+}
 
-	println("Sequential Execution Time:", sequentialDuration.Milliseconds(), "ms")
-	println("Goroutine Execution Time:", goroutineDuration.Milliseconds(), "ms")
-	println("Channel Execution Time:", channelDuration.Milliseconds(), "ms")
-	println("Actor Execution Time:", actorDuration.Milliseconds(), "ms")
+func avgMillis(durs []time.Duration) float64 {
+	if len(durs) == 0 {
+		return 0
+	}
+	var sum time.Duration
+	for _, d := range durs {
+		sum += d
+	}
+	return float64(sum) / float64(time.Millisecond) / float64(len(durs))
 }

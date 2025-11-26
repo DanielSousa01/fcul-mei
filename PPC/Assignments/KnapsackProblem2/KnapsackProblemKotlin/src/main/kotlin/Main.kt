@@ -10,12 +10,15 @@ fun main() {
     val knapsackGAActor = knapsack.actor.KnapsackGAActor(silent = silent, chunkSize = 500)
 
 //  warmup
+    println("Warming up...")
     for (i in 1..3) {
+        println("Warmup iteration $i")
         knapsackGASequential.run()
         knapsackGACoroutine.run()
         knapsackGAChannel.run()
         knapsackGAActor.run()
     }
+    println("Warmup complete.")
 
     val sequentialTimes = mutableListOf<Long>()
     val coroutineTimes = mutableListOf<Long>()
@@ -23,25 +26,25 @@ fun main() {
     val actorTimes = mutableListOf<Long>()
 
     for (i in 1..5) {
-        println("Running Knapsack GA Sequential")
+        println("$i: Running Knapsack GA Sequential")
         val sequentialTimeStart = System.currentTimeMillis()
         knapsackGASequential.run()
         val sequentialTimeEnd = System.currentTimeMillis()
         sequentialTimes.add(sequentialTimeEnd - sequentialTimeStart)
 
-        println("Running Knapsack GA Coroutine")
+        println("$i: Running Knapsack GA Coroutine")
         val coroutineTimeStart = System.currentTimeMillis()
         knapsackGACoroutine.run()
         val coroutineTimeEnd = System.currentTimeMillis()
         coroutineTimes.add(coroutineTimeEnd - coroutineTimeStart)
 
-        println("Running Knapsack GA Channel")
+        println("$i: Running Knapsack GA Channel")
         val channelTimeStart = System.currentTimeMillis()
         knapsackGAChannel.run()
         val channelTimeEnd = System.currentTimeMillis()
         channelTimes.add(channelTimeEnd - channelTimeStart)
 
-        println("Running Knapsack GA Actor")
+        println("$i: Running Knapsack GA Actor")
         val actorTimeStart = System.currentTimeMillis()
         knapsackGAActor.run()
         val actorTimeEnd = System.currentTimeMillis()
