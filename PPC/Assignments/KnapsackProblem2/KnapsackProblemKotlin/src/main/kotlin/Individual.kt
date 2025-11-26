@@ -13,6 +13,13 @@ class Individual {
     var selectedItems: BooleanArray = BooleanArray(GENE_SIZE)
     var fitness: Int = 0
 
+    fun deepCopy(): Individual {
+        val copy = Individual()
+        copy.selectedItems = selectedItems.copyOf()
+        copy.fitness = fitness
+        return copy
+    }
+
     /*
 	 * This method evaluates how good a solution the current individual is.
 	 * Returns +totalValue if within the weight limit, otherwise returns
@@ -79,6 +86,12 @@ class Individual {
                 ind.selectedItems[i] = r.nextBoolean()
             }
             return ind
+        }
+
+        fun Array<Individual>.deepCopy(): Array<Individual> {
+            return Array(this.size) { idx ->
+                this[idx].deepCopy()
+            }
         }
     }
 }

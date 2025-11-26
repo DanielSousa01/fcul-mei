@@ -1,29 +1,27 @@
 package knapsack.actor.actors
 
+import Individual
 import akka.actor.AbstractActor
 
 class FitnessActor : AbstractActor() {
 
     data class Request(
-        val measureFitness: (Int) -> Unit,
-        val startIdx: Int,
-        val endIdx: Int
+        val chunk: Array<Individual>,
+        val chunkIdx: Int
     )
 
-    data class Response(val total: Int)
+    data class Response(val chunk: Array<Individual>, val chunkIdx: Int)
 
     override fun createReceive(): Receive {
         return receiveBuilder()
             .match(Request::class.java) { request ->
-                val measureFitness = request.measureFitness
-                val startIdx = request.startIdx
-                val endIdx = request.endIdx
+                val chunk = request.chunk
 
-                for (i in startIdx until endIdx) {
-                    measureFitness(i)
+                for (individual in chunk) {
+                    individual.measureFitness()
                 }
 
-                sender.tell(Response(endIdx - startIdx), self)
+                sender.tell(Response(chunk, request.chunkIdx), self)
             }
             .build()
     }

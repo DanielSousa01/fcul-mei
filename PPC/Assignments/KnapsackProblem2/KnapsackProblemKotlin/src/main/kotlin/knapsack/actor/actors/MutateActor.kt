@@ -1,28 +1,31 @@
 package knapsack.actor.actors
 
+import Individual
+import KnapsackGA.Companion.PROB_MUTATION
 import akka.actor.AbstractActor
+import java.util.concurrent.ThreadLocalRandom
 
 class MutateActor : AbstractActor() {
     data class Request(
-        val mutate: (Int) -> Unit,
-        val startIdx: Int,
-        val endIdx: Int
+        val chunk: Array<Individual>,
+        val chunkIdx: Int
     )
 
-    data class Response(val total: Int)
+    data class Response(val chunk: Array<Individual>, val chunkIdx: Int)
 
     override fun createReceive(): Receive {
         return receiveBuilder()
             .match(Request::class.java) { request ->
-                val mutate = request.mutate
-                val startIdx = request.startIdx
-                val endIdx = request.endIdx
+                val chunk = request.chunk
+                val r = ThreadLocalRandom.current()
 
-                for (i in startIdx until endIdx) {
-                    mutate(i)
+                for (individual in chunk) {
+                    if (r.nextDouble() < PROB_MUTATION) {
+                        individual.mutate(r)
+                    }
                 }
 
-                sender.tell(Response(endIdx - startIdx), self)
+                sender.tell(Response(chunk, request.chunkIdx), self)
             }
             .build()
     }

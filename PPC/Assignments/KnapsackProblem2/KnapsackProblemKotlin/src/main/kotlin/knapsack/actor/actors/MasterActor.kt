@@ -1,15 +1,14 @@
 package knapsack.actor.actors
 
 import Individual
+import Individual.Companion.deepCopy
 import KnapsackGA.Companion.N_GENERATIONS
 import KnapsackGA.Companion.POP_SIZE
-import KnapsackGA.Companion.PROB_MUTATION
 import akka.actor.AbstractActor
 import akka.actor.ActorRef
 import akka.actor.Props
 import akka.routing.RoundRobinPool
 import java.util.*
-import java.util.concurrent.ThreadLocalRandom
 
 class MasterActor(
     private val chunkSize: Int,
@@ -42,6 +41,7 @@ class MasterActor(
 
     private var generation = 0
     private var responsesReceived = 0
+    private var chunksExpected = 0
     private lateinit var best: Individual
     private lateinit var newPopulation: Array<Individual>
 
@@ -59,15 +59,15 @@ class MasterActor(
 
     fun calculateFitness() {
         responsesReceived = 0
+        chunksExpected = 0
+
         for (startIdx in 0 until POP_SIZE step chunkSize) {
             val endIdx = minOf(startIdx + chunkSize, POP_SIZE)
+            val chunk = population.sliceArray(startIdx until endIdx).deepCopy()
 
-            val message = FitnessActor.Request(
-                { idx: Int -> population[idx].measureFitness() },
-                startIdx,
-                endIdx
-            )
+            val message = FitnessActor.Request(chunk, chunksExpected)
             fitnessPool.tell(message, self)
+            chunksExpected++
         }
     }
 
@@ -78,40 +78,36 @@ class MasterActor(
 
     private fun crossoverPopulation() {
         responsesReceived = 0
+        chunksExpected = 0
         newPopulation = Array(POP_SIZE) { best }
+
+        val populationSnapshot = population.deepCopy()
 
         for (startIdx in 1 until POP_SIZE step chunkSize) {
             val endIdx = minOf(startIdx + chunkSize, POP_SIZE)
+            val localChunkSize = endIdx - startIdx
 
             val message = CrossoverActor.Request(
-                population,
-                { idx: Int, individual: Individual -> newPopulation[idx] = individual },
-                startIdx,
-                endIdx
+                populationSnapshot,
+                localChunkSize,
+                chunksExpected
             )
             crossoverPool.tell(message, self)
+            chunksExpected++
         }
     }
 
     private fun mutatePopulation() {
         responsesReceived = 0
-        ThreadLocalRandom.current()
+        chunksExpected = 0
 
         for (startIdx in 1 until POP_SIZE step chunkSize) {
             val endIdx = minOf(startIdx + chunkSize, POP_SIZE)
-            val r = ThreadLocalRandom.current()
+            val chunk = newPopulation.sliceArray(startIdx until endIdx).deepCopy()
 
-            val message = MutateActor.Request(
-                { idx: Int ->
-                    if (r.nextDouble() < PROB_MUTATION) {
-                        newPopulation[idx].mutate(r)
-                    }
-                },
-                startIdx,
-                endIdx
-            )
-
+            val message = MutateActor.Request(chunk, chunksExpected)
             mutatePool.tell(message, self)
+            chunksExpected++
         }
     }
 
@@ -122,9 +118,13 @@ class MasterActor(
                 calculateFitness()
             }
             .match(FitnessActor.Response::class.java) { msg ->
-                responsesReceived += msg.total
+                val startIdx = msg.chunkIdx * chunkSize
+                for (i in msg.chunk.indices) {
+                    population[startIdx + i] = msg.chunk[i]
+                }
+                responsesReceived++
 
-                if (responsesReceived == POP_SIZE) {
+                if (responsesReceived == chunksExpected) {
                     bestOfPopulation()
                 }
             }
@@ -138,16 +138,24 @@ class MasterActor(
                 crossoverPopulation()
             }
             .match(CrossoverActor.Response::class.java) { msg ->
-                responsesReceived += msg.total
+                val startIdx = 1 + msg.chunkIdx * chunkSize
+                for (i in msg.newChunk.indices) {
+                    newPopulation[startIdx + i] = msg.newChunk[i]
+                }
+                responsesReceived++
 
-                if (responsesReceived == POP_SIZE - 1) {
+                if (responsesReceived == chunksExpected) {
                     mutatePopulation()
                 }
             }
             .match(MutateActor.Response::class.java) { msg ->
-                responsesReceived += msg.total
+                val startIdx = 1 + msg.chunkIdx * chunkSize
+                for (i in msg.chunk.indices) {
+                    newPopulation[startIdx + i] = msg.chunk[i]
+                }
+                responsesReceived++
 
-                if (responsesReceived == POP_SIZE - 1) {
+                if (responsesReceived == chunksExpected) {
                     // Swap populations
                     population = newPopulation
                     nextGeneration()
