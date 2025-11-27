@@ -1,0 +1,19 @@
+{
+  "Kotlin": {
+    "Sequential": 42888,
+    "Coroutine": 9513,
+    "Channel": 34285,
+    "Actor": 36464
+  },
+  "Go": {
+    "Sequential": 72728.21,
+    "Goroutine": 15390.88,
+    "Channel": 32535.76,
+    "Actor": 32849.94
+  },
+  "Rust": {
+    "Sequential": 58100.710099,
+    "Channel": 40296.727424,
+    "Coroutine": 11641.160699
+  }
+}

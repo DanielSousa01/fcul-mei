@@ -7,10 +7,7 @@ import KnapsackGA.Companion.N_GENERATIONS
 import KnapsackGA.Companion.POP_SIZE
 import KnapsackGA.Companion.PROB_MUTATION
 import KnapsackGA.Companion.tournament
-import knapsack.channel.Messages.ProcessCrossoverIndividuals
-import knapsack.channel.Messages.ProcessIndividuals
-import knapsack.channel.Messages.ProcessedCrossoverIndividuals
-import knapsack.channel.Messages.ProcessedIndividuals
+import knapsack.channel.Messages.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -19,8 +16,6 @@ import kotlinx.coroutines.runBlocking
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ThreadLocalRandom
-import kotlin.compareTo
-import kotlin.div
 
 class KnapsackGAChannel(
     override val silent: Boolean = false,

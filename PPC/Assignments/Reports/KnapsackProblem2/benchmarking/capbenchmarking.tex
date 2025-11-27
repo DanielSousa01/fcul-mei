@@ -1,173 +1,133 @@
 \chapter{Benchmarking}\label{cap:benchmarking}
 
-The parallel implementations show significant performance improvements compared
-to the sequential version, with speedups ranging from \textbf{2.6x to 3.9x}
-depending on the implementation strategy and number of threads used as shown in
-the following figures.
-
+\section{Go Implementation}
 \begin{figure}[htbp]
-   \centering
-    \includegraphics[width=\textwidth]{images/speedup_analysis.png}
-    \caption{Speedup across different parallel implementations}
-    \label{fig:speedup}
+    \centering
+    \includegraphics[width=0.7\textwidth]{benchmarking/images/go.png}
+    \caption{Go Execution Times}
+    \label{fig:go_execution_times}
 \end{figure}
 
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{|l|r|r|}
+        \hline
+        \textbf{Implementation} & \textbf{Time (ms)} & \textbf{Speedup} \\
+        \hline
+        Sequential & 72,728.21 & 1.00x \\
+        \textbf{Goroutines} & \textbf{15,390.88} & \textbf{4.72x} \\
+        Channels & 32,535.76 & 2.24x \\
+        Actors & 32,849.94 & 2.21x \\
+        \hline
+    \end{tabular}
+    \caption{Go Implementation Performance}
+    \label{tab:go_performance}
+\end{table}
+
+\textbf{Best: Goroutines} - Lightweight concurrency with minimal overhead.
+
+\newpage 
+
+\section{Kotlin Implementation}
 \begin{figure}[htbp]
-   \centering
-   \includegraphics[width=\textwidth]{images/performance_comparison.png}
-   \caption{Performance comparison of all implementations}
-   \label{fig:performance}
+    \centering
+    \includegraphics[width=0.7\textwidth]{benchmarking/images/kotlin.png}
+    \caption{Kotlin Execution Times}
+    \label{fig:kotlin_execution_times}
 \end{figure}
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{|l|r|r|}
+        \hline
+        \textbf{Implementation} & \textbf{Time (ms)} & \textbf{Speedup} \\
+        \hline
+        Sequential & 42,888.00 & 1.00x \\
+        \textbf{Coroutines} & \textbf{9,513.00} & \textbf{4.51x} \\
+        Channels & 34,285.00 & 1.25x \\
+        Actors & 36,464.00 & 1.18x \\
+        \hline
+    \end{tabular}
+    \caption{Kotlin Implementation Performance}
+    \label{tab:kotlin_performance}
+\end{table}
+
+\textbf{Best: Coroutines} - Fastest sequential baseline and excellent parallel performance.
 
 \newpage
 
-\section{Analysis of Performance Results}
-
-The performance results can be explained by several key factors related to the
-nature of the algorithm and the characteristics of each parallelization
-strategy:
-
-\subsection{Master-Worker Performance}
-
-\begin{enumerate}
-   \item \textbf{Configurable Worker Thread Pool}: This implementation creates
-   workers equal to the \texttt{maxThreads} parameter that remain active
-   throughout all generations, eliminating thread creation/destruction overhead
-   \item \textbf{LinkedBlockingQueue Efficiency}: The thread-safe
-   \texttt{LinkedBlockingQueue<Task>} provides optimal load balancing - workers
-   continuously poll without spinning, and blocking ensures immediate task
-   pickup
-   \item \textbf{Poison Pill Termination}: The \texttt{TaskType.POISON\_PILL}
-   shutdown mechanism in \texttt{stopWorkers()} minimizes synchronization
-   complexity compared to other termination strategies
-   \item \textbf{Chunked Population Processing}: Population division based on
-   \texttt{POP\_SIZE / maxThreads} ensures consistent memory regions per worker,
-   improving cache locality
-   \item \textbf{CountDownLatch Synchronization}: Each operation uses precise
-   synchronization barriers without unnecessary thread blocking between
-   algorithm steps
-\end{enumerate}
-
-\newpage
-
-\subsection{Fork-Join Threshold Analysis}
-
-The threshold parameter significantly impacts performance across different
-configurations:
-
-\begin{enumerate}
-   \item \textbf{1k Threshold Advantages}:
-      \begin{itemize}
-      \item Optimal task granularity for algorithm computational intensity
-      \item Sufficient parallel tasks without excessive \texttt{RecursiveAction}
-      creation overhead
-      \item Effective work-stealing due to balanced task completion times
-      \item Better utilization at high thread counts (16 threads)
-      \end{itemize}
-
-   \item \textbf{5k and 10k Threshold Limitations}:
-      \begin{itemize}
-      \item Larger chunks create fewer parallel opportunities, especially
-      problematic at 16 threads
-      \item Less effective work-stealing due to uneven task distribution
-      \item Underutilization when chunk count $<$ available thread count
-      \end{itemize}
-
-   \item \textbf{Work-Stealing Framework}: The \texttt{ForkJoinPool} with
-   \texttt{invokeAll()} provides automatic load balancing through work-stealing
-   queues, explaining consistent scaling performance
-\end{enumerate}
-
-\subsection{Scatter-Gather Characteristics}
-
-\begin{enumerate}
-   \item \textbf{Configurable Thread Pool}:
-   \texttt{Executors.newFixedThreadPool(maxThreads)} where \texttt{maxThreads}
-   is a configurable parameter created once per execution minimizes thread
-   management overhead across generations
-   \item \textbf{Future-Based Coordination}: The \texttt{futures.forEach \{
-   it.get() \}} pattern creates efficient synchronization barriers but requires
-   all threads to complete before proceeding
-   \item \textbf{Static Chunk Distribution}: Equal work distribution
-   (\texttt{chunkSize = total operations / maxThreads}) works well for uniform
-   algorithm workloads
-\end{enumerate}
-
-\newpage
-
-\subsection{Efficiency}
-
+\section{Rust Implementation}
 \begin{figure}[htbp]
-   \centering
-   \includegraphics[width=0.7\textwidth]{images/efficiency_analysis.png}
-   \caption{Efficiency analysis for multiple thread counts}
-   \label{fig:efficiency}
+    \centering
+    \includegraphics[width=0.7\textwidth]{benchmarking/images/rust.png}
+    \caption{Rust Execution Times}
+    \label{fig:rust_execution_times}
 \end{figure}
 
-The efficiency results presented in Figure~\ref{fig:efficiency} indicate how well
-each parallel implementation utilizes the available threads. Efficiency is defined
-as the ratio of the actual speedup achieved to the number of threads used
-(Speedup $\div$ Number of Threads), expressed as a percentage.
-All implementations show a decline in efficiency as the number of threads
-increases, which is expected due to the overheads associated with parallelism.
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{|l|r|r|}
+        \hline
+        \textbf{Implementation} & \textbf{Time (ms)} & \textbf{Speedup} \\
+        \hline
+        Sequential & 58,100.71 & 1.00x \\
+        Channels & 40,296.73 & 1.44x \\
+        \textbf{Async Tasks} & \textbf{11,641.16} & \textbf{4.99x} \\
+        \hline
+    \end{tabular}
+    \caption{Rust Implementation Performance}
+    \label{tab:rust_performance}
+\end{table}
 
-Some of the key factors that affect efficiency include:
+\textbf{Best: Async Tasks} - Highest speedup using unsafe optimizations for zero-copy operations.
 
+\newpage
+
+\section{Kotlin Implementation (Assignment \#1)}
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{|l|r|}
+        \hline
+        \textbf{Implementation} & \textbf{Speedup (16 threads)} \\
+        \hline
+        Master-Worker & \textbf{3.93x} \\
+        Fork-Join (1k) & ~3.81x \\
+        Scatter-Gather & ~3.86x \\
+        \hline
+    \end{tabular}
+    \caption{Kotlin Implementation Performance}
+    \label{tab:kotlin_performance_assignment1}
+\end{table}
+
+\textbf{Best: Master-Worker} - Persistent thread pool with efficient task distribution.
+
+\section{Key Findings}
+
+\subsection{Overall Performance Ranking}
 \begin{enumerate}
-   \item \textbf{Amdahl's Law}: Sequential algorithm portions (initialization,
-   result collection, synchronization points) become bottlenecks as parallel
-   portions accelerate
-   \item \textbf{Synchronization Overhead Scaling}:
-   \texttt{CountDownLatch.await()} and \texttt{AtomicReference} compare-and-swap
-   operations become more expensive with increased thread contention
-   \item \textbf{Memory Subsystem Saturation}:
-      \begin{itemize}
-      \item Cache consistency overhead increases with thread count
-      \item Memory bandwidth limits during population array manipulation
-      \item Potential false sharing in population data structures
-      \end{itemize}
-   \item \textbf{Hardware Architecture Limits}: Beyond 8 threads, hyperthreading
-   effects significantly reduce per-thread effectiveness since the experimental
-   setup uses a machine with 8 physical cores and 16 logical processors
-   (hyperthreading enabled). Threads 9-16 share execution units, caches, and
-   pipeline resources with threads 1-8, leading to resource contention rather
-   than true parallelism
+    \item \textbf{Rust Async Tasks}: 4.99x speedup - Zero-copy optimizations
+    \item \textbf{Go Goroutines}: 4.72x speedup - Lightweight concurrency primitives
+    \item \textbf{Kotlin Coroutines}: 4.51x speedup - Efficient JVM-based coroutines
+    \item \textbf{Kotlin Master-Worker}: 3.93x speedup - Traditional thread pool approach
 \end{enumerate}
 
-\subsection{Implementation-Specific Performance Factors}
-
+\subsection{Pattern Performance}
 \begin{itemize}
-   \item \textbf{Master-Worker}: Persistent threads + efficient task queue =
-   minimal coordination overhead
-   \item \textbf{Fork-Join 1k}: Optimal granularity + recursive work-stealing =
-   superior load balancing
-   \item \textbf{Scatter-Gather}: Simple coordination + thread pool reuse =
-   solid baseline performance
-   \item \textbf{Fork-Join 5k/10k}: Suboptimal granularity limits
-   parallelization effectiveness at higher thread counts
+    \item \textbf{Direct Parallelism} (Coroutines/Goroutines/Async): 4-5x speedup
+    \item \textbf{Thread Pools} (Java patterns): 3-4x speedup
+    \item \textbf{Message Passing} (Channels): 1.2-2.2x speedup 
+    \item \textbf{Actors}: 1.2-2.2x speedup 
 \end{itemize}
 
-\subsection{Experimental Setup}
-The experimental setup for evaluating the performance of the algorithm
-implementations involved the following key components:
-
+\subsection{Sequential Baseline Comparison}
 \begin{itemize}
-   \item \textbf{Hardware}: The machine used for testing is equipped with an AMD
-   Ryzen 7 processor featuring 8 physical cores and 16 logical processors
-   (hyperthreading enabled), along with 16GB of RAM. This configuration allows
-   for testing various thread counts up to 16.
-   \item \textbf{Operating System}: The experiments were conducted on a 64-bit
-   version of Windows 11.
-   \item \textbf{Java Version}: All implementations were developed and executed
-   using OpenJDK 17.0.16+8.
-   \item \textbf{Benchmarking Framework}: The JMH (Java Microbenchmark Harness)
-   was used to ensure accurate and reliable performance measurements using the
-   following configurations for the parallel implementations:
-   \begin{itemize}
-   \item Benchmark mode: Average time
-   \item Output time unit: milliseconds
-   \item Forks: 3
-   \item Warm-up iterations: 3 with 2 seconds each
-   \item Measurement iterations: 5 with 2 seconds each
-   \end{itemize}
+    \item \textbf{Fastest}: Kotlin (42,888 ms)
+    \item \textbf{Middle}: Rust (58,101 ms)
+    \item \textbf{Slowest}: Go (72,728 ms)
 \end{itemize}
+
+\section{Conclusion}
+
+\textbf{Concurrency model matters more than language choice.} Direct parallelism approaches (coroutines, goroutines, async tasks) consistently outperform message-passing patterns by 2-3x across all languages.
+
+

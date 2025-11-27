@@ -1,1 +1,25 @@
 \chapter{Architecture}\label{chap:architecture}
+
+The assignment focuses on exploring task parallelism and message-driven designs for a
+Genetic Algorithm (GA) solving the Knapsack Problem. The goal is to implement the GA
+using concurrency models that avoid shared mutable state and use message passing or
+channels so the solution can be scaled across processes or machines in future work.
+
+The three chosen languages and concurrency approaches are:
+
+\begin{itemize}
+    \item \textbf{Kotlin} — coroutines and channels (using `kotlinx.coroutines`). The actor-style
+    behaviour is implemented with Akka actors for JVM interoperability.
+    \item \textbf{Go} — goroutines and channels (native language primitives). Actor-like
+    components with Proto Actor.
+    \item \textbf{Rust} — asynchronous tasks and channels (using `tokio::sync::mpsc` or
+    `async-std`). The actor model was not implemented due to time constraints.
+\end{itemize}
+
+For each language the architecture was built with minimal synchronization and clear separation of responsibilities. The core architectural elements are:
+
+\begin{itemize}
+    \item \textbf{Task Division}: The GA work is split into stages (evaluation, selection, crossover and mutation). Each stage is composed of independent tasks that can be processed concurrently.
+    \item \textbf{Worker Entities}: These are coroutines/goroutines/async tasks which are pooled to execute specific operations (e.g., fitness evaluation). Workers own no shared mutable state and communicate via messages or channels (Actors and Channels).
+    \item \textbf{Result Aggregation}: A coordinator (or master actor) collects results, performs replacement and decides termination.
+\end{itemize}

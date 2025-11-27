@@ -40,15 +40,7 @@ pub fn new_individual_random(r: &mut impl Rng) -> Individual {
     }
 }
 
-pub fn deep_copy_individual(ind: &Individual) -> Individual {
-    *ind
-}
-
 impl Individual {
-    pub fn deep_copy(&self) -> Individual {
-        *self
-    }
-
     pub fn measure_fitness(&mut self) {
         let mut total_value = 0;
         let mut total_weight = 0;

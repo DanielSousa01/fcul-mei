@@ -25,7 +25,6 @@ class CrossoverActor : AbstractActor() {
                 for (i in 0 until chunkSize) {
                     val parent1 = tournament(r, population)
                     val parent2 = tournament(r, population)
-
                     newChunk[i] = parent1.crossoverWith(parent2, r)
                 }
 

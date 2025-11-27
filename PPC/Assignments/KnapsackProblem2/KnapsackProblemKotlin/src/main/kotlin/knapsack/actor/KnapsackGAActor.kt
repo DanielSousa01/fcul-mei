@@ -10,8 +10,8 @@ import knapsack.actor.actors.MasterActor.Companion.Finished
 import knapsack.actor.actors.MasterActor.Companion.Start
 import scala.concurrent.Await
 import java.util.concurrent.TimeUnit
-import java.time.Duration as JavaDuration
 import scala.concurrent.duration.Duration as ScalaDuration
+import java.time.Duration as JavaDuration
 
 class KnapsackGAActor(
     override val silent: Boolean = false,

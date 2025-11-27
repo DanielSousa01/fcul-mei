@@ -12,12 +12,14 @@ fn main() {
     let mut ga_channel = new_knapsack_ga_channel(16, 500);
     let mut ga_coroutine = new_knapsack_ga_coroutine(500);
 
+    let silent = true;
+
     println!("Warming up...");
     for i in 0..3 {
         println!("Warm-up iteration {:?}", i);
-        ga_sequential.run(true);
-        ga_channel.run(true);
-        ga_coroutine.run(true);
+        ga_sequential.run(silent);
+        ga_channel.run(silent);
+        ga_coroutine.run(silent);
     }
     println!("Warm-up complete.");
 
@@ -29,19 +31,19 @@ fn main() {
         println!("Timed iteration {:?}", i);
 
         let start = Instant::now();
-        ga_sequential.run(false);
+        ga_sequential.run(silent);
         let duration = start.elapsed();
         sequential_times.push(duration);
         println!("Sequential iteration {:?} time: {:?}", i, duration);
 
         let start = Instant::now();
-        ga_channel.run(false);
+        ga_channel.run(silent);
         let duration = start.elapsed();
         channel_times.push(duration);
         println!("Channel iteration {:?} time: {:?}", i, duration);
 
         let start = Instant::now();
-        ga_coroutine.run(false);
+        ga_coroutine.run(silent);
         let duration = start.elapsed();
         coroutine_times.push(duration);
         println!("Coroutine iteration {:?} time: {:?}", i, duration);
