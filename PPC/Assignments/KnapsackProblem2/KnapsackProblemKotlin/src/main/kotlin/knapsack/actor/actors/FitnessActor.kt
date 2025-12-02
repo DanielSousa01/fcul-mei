@@ -16,7 +16,7 @@ class FitnessActor : AbstractActor() {
         return receiveBuilder()
             .match(Request::class.java) { request ->
                 val chunk = request.chunk
-
+                
                 for (individual in chunk) {
                     individual.measureFitness()
                 }
