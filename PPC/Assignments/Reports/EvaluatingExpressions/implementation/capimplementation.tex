@@ -1,0 +1,36 @@
+\chapter{Implementation}
+\label{cap:implementation}
+This chapter describes the implementation details of the GPU accelerated evaluation of mathematical expressions using PyTorch, focusing on memory management, kernel call optimization, and the expression evaluation pipeline.
+
+\section{Memory Management}
+
+\subsection{Host-to-Device Transfers}
+At initialization, all input columns and the target column (\texttt{y}) are transferred to device tensors once at dataset load and remain resident for the duration of all subsequent evaluations, eliminating the need for repeated transfers. During the evaluation loop, all expression computations occur on the device, with only scalar \texttt{.item()} reads performed for best MSE tracking, ensuring minimal host device communication overhead.
+
+\subsection{Data Residency}
+Expressions are compiled into torch operations that work directly on device tensors, ensuring that no data transfers occur between host and device during the evaluation loop. This design minimizes bandwidth usage and keeps memory transfer latency negligible throughout execution.
+
+\section{Kernel Call Optimization}
+
+\subsection{Batching Strategy}
+Expressions are grouped into batches of up to 32 (configurable via \texttt{TASK\_BATCH}), with each batch stacked into a single 2D tensor for vectorized evaluation. Since kernel launches carry fixed overhead costs, batching reduces the frequency of launches by processing multiple expressions per kernel invocation. By distributing this launch overhead across more computational work, throughput is substantially improved for large populations.
+
+\subsection{Pure Tensor Math}
+All computation occurs as chained tensor operations without per row Python loops on the GPU. The Python runtime handles only expression parsing and batch orchestration, delegating the actual computation to the CUDA backend.
+
+\section{Expression Evaluation Pipeline}
+
+The expression evaluation pipeline consists of five sequential steps:
+
+\begin{enumerate}
+  \item \textbf{Parse:} \texttt{generate\_kernel\_code} replaces function names with \texttt{OPS[...]} (torch ops) and column references with \texttt{X['col']}.
+  \item \textbf{Compile:} \texttt{compile\_kernel} uses \texttt{exec} to build a Python callable (\texttt{kernel\_func}); same effect as the previous \texttt{eval()} step.
+  \item \textbf{Execute:} In \texttt{benchmark\_parallel}, each compiled callable is applied to the current batch of tensors (\texttt{kernel(X, OPS)}), all resident on device.
+  \item \textbf{Reduce:} \texttt{errs = torch.mean((preds - y) ** 2, dim=1)} computes per-expression MSE vectorized on the device.
+  \item \textbf{Track:} Only \texttt{err.item()} (scalar) is read back to the host to update \texttt{best\_err}/\texttt{best\_expr}, minimizing transfers.
+\end{enumerate}
+
+\section{Genetic Programming Adaptations}
+
+Inputs and the target are transferred to the GPU once per dataset and remain resident for all evaluations. Expressions are parsed and compiled once per run into Python callables. Populations are evaluated in batches using the same \texttt{TASK\_BATCH} stacking, which distributes kernel launch overhead across multiple expressions. Only scalar MSE values are returned to the host while predictions stay on device, minimizing host device transfers.
+

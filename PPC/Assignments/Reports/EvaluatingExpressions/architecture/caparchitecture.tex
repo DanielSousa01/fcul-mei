@@ -1,0 +1,25 @@
+\chapter{Architecture}\label{chap:architecture}
+
+This chapter details the parallel architecture and design decisions made for the GPU-accelerated evaluation of mathematical expressions using PyTorch.
+
+\section{Parallelization Strategy}
+
+\subsection{Data and Task Parallelism}
+
+\textbf{Data Parallelism:} All input columns and target column are transferred to GPU once at dataset load and remain resident as tensors. Vectorized operations process entire arrays simultaneously with no per sample loops on device, and each elementwise operation benefits from parallel threads across the sample dimension. \textbf{Task Parallelism:} Multiple candidate expressions are batched (up to 32 per batch via \texttt{TASK\_BATCH}). Batched expressions are executed together with \texttt{torch.stack}, enabling fused kernels instead of individual per expression kernels, as PyTorch automatically fuses multiple elementwise operations into a single kernel invocation.
+
+\section{Kernel Design and Execution}
+
+\subsection{Kernel Count per Batch}
+For each batch containing up to 32 expressions, the implementation generates approximately two elementwise kernels: one for prediction generation and one for MSE reduction. Across a complete dataset evaluation, this results in roughly 2 kernels multiplied by $\lceil n_{\text{functions}} / 32 \rceil$, where the ceiling function accounts for the final potentially incomplete batch.
+
+\subsection{Thread and Block Selection}
+Thread and block dimensions are delegated entirely to the PyTorch CUDA backend, which automatically selects optimal grid and block configurations for elementwise operations based on the target GPU architecture. This eliminates the need for manual \texttt{<<<grid, block>>>} configuration and ensures that the implementation benefits from PyTorch's architecture specific optimizations.
+
+\subsection{Shared Memory Usage}
+The current implementation does not explicitly utilize shared memory, as the workload consists primarily of simple elementwise mathematical operations that lack the data reuse patterns typically required to benefit from shared memory optimizations. Instead, the backend relies on caches and register level reuse to maintain performance.
+
+\subsection{Control Flow and Divergence}
+
+\subsubsection{Branch Divergence Handling}
+The expressions in this implementation evaluate to branch free arithmetic operations, resulting in no in kernel control flow and negligible warp divergence due to uniform execution paths across threads. Branching only occurs in the Python host code during best score tracking updates, ensuring that kernel execution remains divergence free and efficient.
