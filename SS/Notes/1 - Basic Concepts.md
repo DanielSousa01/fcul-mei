@@ -30,8 +30,7 @@ exploited by a threat source**.
 - A weakness in a system, application, or network that is
 **subject to exploitation or misuse**.
 
-A **0-day vulnerability** is a vulnerability that is
-unknown to those who would be interested in mitigating the vulnerability (including the vendor of the target software). Until the vulnerability is mitigated, hackers can exploit it to adversely affect programs, data, additional computers or a network.
+A **0-day vulnerability** is a vulnerability that is unknown to those who would be interested in mitigating the vulnerability (including the vendor of the target software). Until the vulnerability is mitigated, hackers can exploit it to adversely affect programs, data, additional computers or a network.
 
 More specifically, a **0-day vulnerability** is a vulnerability not publicly known (only a group of people has the knowledge that it exists; sold in dark-web marketplaces).
 
