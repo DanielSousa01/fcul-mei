@@ -296,5 +296,350 @@ Escape several forms of protection (e.g., non-executable stack; stack canaries)
 
 ## Arc Injection or Return-to-libc
 
-**Difficulty:** The stack **cannot** be executed.
+**Difficulty:** The stack **cannot** be executed (DEP/NX protection).
 **Assume:** **no** stack canaries or ASLR.
+
+**Concept:** Insert a new arc in the program's control-flow graph by overwriting the return address to point to code **already in the program** — often to library functions like `system()`.
+
+**Attack mechanism:**
+
+1. **Overwrite the return address**: Set the saved RIP in the stack frame to point to a target function (e.g., `system()` from libc).
+
+2. **Prepare function arguments**: Register or stack values must be set up to match the calling convention:
+   - For `system(const char *command)`, ensure the register/stack holding the command pointer (e.g., RDI in x86-64) points to an attacker-supplied string in memory.
+   - This string is typically placed within a writable buffer (e.g., in the stack or a data segment).
+
+3. **Control flow hijack**: When the vulnerable function returns via `ret`, the CPU pops the overwritten return address and jumps to the target function, bypassing code-injection restrictions.
+
+**Advantages over shellcode injection:**
+
+- No need for executable stack (already bypassed DEP/NX).
+- Leverages existing library functions; no custom shellcode required.
+- Can chain multiple function calls (Return-Oriented Programming / ROP) for complex attacks.
+
+**Limitations:**
+
+- Requires knowledge of target function addresses (defeated by ASLR without info leak).
+- Must maintain a valid stack frame or respect calling conventions to avoid crashes.
+
+## Return-Oriented Programming (ROP)
+
+**Assume:** **no** stack canaries or ASLR.
+
+- Think about **various forms of code** in the address space of a process like program, libraries, etc. 
+- Think about the many places where there are **returns** in that code. Each return instruction can be used to jump to another piece of code.
+- Think about the **code immediately before the return**.
+
+![alt text](images/rop1.png)
+
+Now, **select and reorganize those pieces of code** in order tho get a relevante program. Recall that **registers will be reused** across functions, for instance, in math operations.
+
+![alt text](images/rop2.png)
+
+![alt text](images/rop3.png)
+
+![alt text](images/rop4.png)
+
+## Example: CFI (Implementation of Intel/gcc)
+
+**Intel's Control-Flow Enforcement Technology (CET)** offers protection against ROP attacks and also call-jump-oriented programming (CJOP) attacks, which manipulate indirect control-flow to reuse existing code for malicious purposes.
+
+**Shadow Stack:** The processor maintains a separate "**shadow stack**" that stores return address. When a function returns, the address on the shadow stack is compared to the one on the main stack. If they differ, it indicates an attack, and the processor halts execution.
+
+**Indirect Branch Tracking (IBT):** This feature ensures that indirect calls and jumps **only target a valid specially marked instruction** (`endbr64` for 64-bit mode). This prevents attackers from redirecting control flow to arbitrary code.  
+
+**Note**: It is being deployed in newer Intel processors.
+
+## Heap Spray
+
+**Difficulty:** do not have a precise memory location to jump.
+
+The attacker has managed to exploit a vulnerability but cannot find the precise address where the shell code is placed. It is therefore common to **spray large regions of the heap** with a single byte that translates to a valid instruction such as NOP (No Operation called **NOP sled**) followed by the actual shell code.
+
+![alt text](images/heapSpray.png)
+
+When the attacker overwrites the return address, it can point to any address within the sprayed region. The CPU will execute NOP instructions until it reaches the shell code.
+
+## Modify a Pointer
+
+**Difficulty:** do not have a precise memory location to jump.
+
+In general, this kind of exploit involves **modifying a pointer** to some extent, that the actual implementation dependes on how the compiler lays out local variables and parameters in the stack frame.
+
+**Examples:**
+
+1. **Function-pointer clobbering:** Modify a funtion pointer to point to the attacker's supplied code.
+2. **Data-pointer modification:** Modify address used to assign data.
+3. **Exception-handler hijacking:** Modify the pointer to an exception handler to point to the attacker's code.
+4. **Virtual pointer overflow:** Modify the C++ virtual funtion table associated with a class.
+5. **Leverage from Malloc:** Resort to `malloc` implementation specificities.
+
+### Function-Pointer Clobbering
+
+Modify a **function pointer** to point to the code desired by the attacker (e.g., supplied by him)
+
+![alt text](images/functionPointerClobbering.png)
+
+Note that the return address from func does not have to be changed.
+This combines well with other techniques such as return-to-libc (e.g., overflow **f** with pointer to `system()`).
+
+### Modify a Data-Pointer
+
+A pointer used to assign a value is controlled by an attacker for an **arbitrary memory write**.
+
+![alt text](images/modifyDataPointer.png)
+
+The return address from func does not have to be changed.
+Notice that the variable with function pointer **f** is nt local, thus it is not prone to funtion pointer clobbering. But with the data-pointer modification, **f** can be modified.
+
+### Exception-Handler Hijacking
+
+When and exception is generated (e.g., access violation), Windows Structured Exception Handling (SEH) mechanism examines a linked list of exeption handlers discriptors, then invokes the corresponding handles (funtion pointer). This list is stored in the stack, so it can be overrun.
+
+**Attack:**
+
+1. The adderesses of the handlers are substituted by pointers to attacker-supplied or other places (e.g., libc).
+2. An exception is caused in some way (e.g., writing over all the stack causes an exception when its base is overwitten).
+
+**Note:** Some validity checking of the SEH is done since Windows Server 2003, making this attack more difficult.
+**Note 1:** In Linux are also used lists of pointers, either in the heap or stack, that could also be exploited in a similar way. 
+
+### Virtual Pointer Overflow
+
+Virtual funtions are used in C++ to allow a child class to redifine a function inherited from the mother class. Most of C++ compilers user **virtual method table (VTbl)** associated with each class:
+
+- VTbi is an array of pointers to methods.
+- An **object** has in its header a **virtual pointer (VPtr)** to its class VTbl.
+- An attacker can overrun the VPtr of an object with a pointer to a mock VTbl (with pointers to attacker-supplied, libc, ...).
+
+```c
+void method(void * arg, size_t len)
+{
+    char *buf = new char[100];
+    C *ptr = new C;
+    memcpy(buf, arg, len);  // buffer overflow!
+    ptr->vf();              // call to a virtual function
+    return;
+}
+```
+
+### Modify Pointers Throught Malloc
+
+#### Part I
+
+**Problem (for the hacker):** heap implementations vary much.
+
+- `malloc` gets a block of data.
+- `free` releases a block of data (typically only marks it as free).
+
+**Free blocks** usually chained using a double-linked list. This blocks are usually stored with control data inline: Size, link to next free, free/in-use flag, ...
+
+![alt text](images/mallocFree1.png)
+
+#### Part II
+
+![alt text](images/mallocFree2.png)
+
+Assume that the **block A** is free, and we will **overflow the block B**, when the program frees the block B, it is typically merged with contiguous free blocks (A) to create a larger free block by:
+
+1. **The already free block buffer (A) is removed from the free list.**
+2. The control informationin the new free block (e.g., size) (B) is updated to represent the merged of two/three free blocks.
+3. The new free block is inserted in the free list.
+
+Notice taht in typical implementations of `malloc`, the top block does not even have to be free since we can make it look free with the overflow (by changing the flads of A).
+
+#### Part III
+
+Overflow (on B):
+
+- Marks top block as free (changing its flags).
+- Writes over forward and backward pointers.
+
+![alt text](images/mallocFree3.png)
+
+### Summary: Impact od Modifying a Pointer
+
+The attackers overwiting an 8.bytes value in memory can lead to:
+
+- **Modify security-wise relevant data values** in memory  (e.g.,
+flag indicating the user is authenticated).
+- Cause and **information leak** (e.g., by changing a string pointer that is about to be printed).
+- Cause a **jump to an arbitrary address** in memory, by overwriting addresses of routines at:
+  - Exit handlers.
+  - Exception handlers.
+  - Function pointers in the application.
+  - The Procedure Linkage Table (PLT).
+  - ...
+
+Arbitrary pointer write in memory => often allows full program control.
+
+## Use-After-Free 
+
+![alt text](images/useAfterFree.png)
+
+This vulnerability occurs when a program continues to use a pointer after has been freed, with causes problems related to:
+
+- Error conditions and other exceptional situations.
+- Confusion over which part of the program is responsible for freeing memory.
+
+**Impact:**
+
+- **Integrity:** Use of previously freed memory may **corrupt valid data**, if the memory area was allocated and used properly elsewhere.
+- **Availability:** If (`malloc`) chunk consolidation occurs after the use of previously freed memory, the process **may crash** when invalid data is used as chunk information.
+- **Arbitrary Execution:** If malicious data in inserted before chunk consolidation can take place, it may be possible to take advantage of the malloc **write-what-where primitive** to execute **arbitrary code**.
+
+## Off-by-one Errors
+
+```c
+int get_user(char *user) {
+    char buf[1024];
+    if (strlen(user) > sizeof(buf))
+        handle_error ("string too long");
+    strcpy(buf, user);
+}
+```
+
+![alt text](images/offByOne.png)
+
+The BO of (`\0`) if the user has (1024 chars + `\0`):
+
+- Is this exploitable? Only 1 byte can be overwritten.
+- Saved `rbp` has 8 bytes; x86 is little-endian, so the least-significant byte (LSB) is at the lowest address and may be set to `0`.
+- **Effect:** saved `rbp` is reduced by 0–255 bytes.
+- **Consequence:** it can be as if the next frame begins inside `buf`; caller local variables or arguments can be modified.
+- **Epilogue behavior:** when the function returns, `rsp` becomes equal to `rbp`, and then the return address is popped into `rip` from the shifted location, potentially crashing or altering control flow.
+
+# Downcating Overfows
+
+A **Type Cast** operator is a unary operator that forces one data type to be converted inte another data type. C++ suports four types of casting: **Static Cast**, **Dynamic Cast**, **Const Cast** and **Reinterpret Cast**.
+
+**Upcasting:** from a derived class to its parent class.
+**Downcasting:** from a parent class to a derived class.
+
+![alt text](images/downcastingOverflow.png)
+
+## Why is Downcasting unsafe?
+
+![alt text](images/downcastingUnsafe1.png)
+
+![alt text](images/downcastingUnsafe2.png)
+
+**Attack Scenario:**
+
+1. `m_D` is actually a large amount of memory (e.g., a buffer).
+2. `m_D` is on top of a vftptr of another object `V`, which you can overwrite with an arbitrary value.
+3. The corresponding method of that object `V` is accessed, leading to code execution at an arbitrary address.
+
+# Integer Overflows
+
+The semantics of integer-handling is complex, and programmers often don't know all the details.
+- This can appear in several languages, but specially in C/C++.
+- E.g., what happens when a signed integer is passed to an unsigned parameter? R. 4 errors: **overflow**, **underflow**, **signedness**, **truncation**, the first two appearing also in type safe languages (Java, C#).
+
+**Exploit examples:**
+
+- **Insufficient memory allocation** -> BO -> attacker code execution.
+- **Exessive memory allocation / infinite loop** -> DoS.
+- **Attack against array byte index** -> cause a BO -> ...
+- **Attack to bypass sanitizers** -> cause a BO -> ...
+- **Logic errors** (e.g., modify variable to modify program behavior).
+ 
+![alt text](images/integerOverflow.png)
+
+## Overflow
+
+```c
+void vulnerable(char *matrix,
+    size_t x, size_t y, char val)
+{
+    int i, j;
+1   matrix = (char *) malloc(x*y);
+    for (i=0; i<x; i++){
+        for (j=0; j<y; j++){
+2       matrix[i*y+j] = val;
+        }
+    }
+}
+```
+
+**1:** if overflow of `x * y`, then less than the exepected memory size is allocated.
+**2:** `val` might be written to regions of memory outside of the matrix buffer.
+
+A overflow occurs when the result of an expression exceeds the maximum value of the data type used to store it. Thypically, an overflow is handled by the system as:
+```
+if (x != overflow) x = x
+else x = (x mod MAX_SIZE_TYPE_x)
+``` 
+
+## Underflow
+
+Result of the expression is smaller than the minimum value of the type (e.g., subtracting 0-1 and storing the result in an unsigned int). This type of error is less common since its only possible with subtraction.
+
+
+**Netscape JPEG comment length vulnerability:**
+
+```c
+void vulnerable(char *src, size_t len){
+    size_t len_real; // unsigned data type
+    char *dst;
+        if (len < MAX_SIZE) {
+1       len_real = len - 1; // no need to save ‘\0’
+2       dst = (char *) malloc(len_real);
+3       memcpy(dst, src, len_real);
+    }
+} 
+```
+
+**1:** if `len = 0`, then `len_real = 0xFFFFFFFF`.
+**2:** `malloc`probably will return `NULL` because `len_real` is treated as unsigned (and is very large).
+**3:** a write will cause a crash.
+
+## Signedness
+
+A **signed integer** is interpreted as unsigned or vice versa, so negative values are treated as large positive values with a sign bit.
+
+***Signed integers are typically represented in two's complement.***
+
+- **MSB = 1** means negative value.
+- **MSB = 0** means positive value.
+
+**Linux kernel XDR vulnerability:**
+
+```c
+void vulnerable(char *src, size_t len){
+    int lReal;
+    char *dst;
+
+    if (len > 1) {
+1       lReal = len - 1;
+        if (lReal < MAX_SIZE) {
+2           dst= (char*)malloc(lReal);
+            memcpy(dst, src, lReal);
+        }
+    }
+}
+```
+
+**1:** `lReal` is negative if `len > 2^31`.
+**2:** `malloc` returns `NULL` and there is a crash ...
+
+## Truncation
+
+Assigning an integer with a longer wigth to another shorter (e.g., assigning an int (32 bits) to a short (16 bits))
+
+A larger packet causes a truncation -> `malloc` allocs too little space -> the code that uses the space corrupts the memory (src is larger than `lReal`).
+
+**SSH CRC-32 compensation attack detector vulnerability:**
+
+```c 
+void vulnerable(char *src, unsigned int len) {
+    unsigned short lReal;
+    char *dst;
+
+    lReal = len;
+    if (lReal < MAX_SIZE) {
+        dst= (char *) malloc(lReal);
+        strcpy(dst, src);
+    }
+}
+```
