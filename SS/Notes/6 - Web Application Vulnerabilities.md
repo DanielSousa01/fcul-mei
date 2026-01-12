@@ -381,7 +381,7 @@ request.getParameter("lang"));
 ![alt text](images/crlf-injection-2.png)
 
 
-##### Protection for Injection
+##### Protection for Injection.  
 
 **Prevention** is related to ensuring that **user-supplied data** can not be incorrectly used in commands or queries.
 
